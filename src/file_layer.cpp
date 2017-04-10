@@ -62,6 +62,7 @@ void outgoing_message::attach_data(istream& is){
     while(!is.eof()){
         data.push_back(is.get()); 
     }
+    data.pop_back();
 }
 
 //Get the action type of an incoming_message
@@ -78,4 +79,3 @@ string incoming_message::get_filename(){
 void incoming_message::extract_data(ostream& os){
     copy(data.begin(), data.end(), ostream_iterator<unsigned char>(os));
 }
-
