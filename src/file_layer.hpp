@@ -19,23 +19,23 @@ class file_message{
     public:
         string str();       //Obtain a string representation of the messsage
 
-    private:
+    protected:
         action_type::Enum action;
         string filename;
         vector<unsigned char> data;
 };
 
 //Outgoing message type, only allows modification of fields and sending
-class outgoing_message: file_message{
+class outgoing_message: public file_message{
     public:
-        void set_action(action_type::Enum);
-        void set_filename(string);
+        void set_action(const action_type::Enum&);
+        void set_filename(const string&);
         void attach_data(istream&);
         //TODO send
 };
 
 //Incoming message type, only allows receiving and getting fields
-class incoming_message: file_message{
+class incoming_message: public file_message{
     public:
         action_type::Enum get_action();
         string get_filename();
