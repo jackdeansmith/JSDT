@@ -8,42 +8,39 @@ using std::string;
 #include <vector>
 using std::vector;
 
-//Request a file, Deny sending a file, Send data
-enum action_type{REQUEST, DENY, DATA};
-
-static const string request_string = "REQUEST";
-
-//Each file transfer message contains the following information
-struct file_message{
-    action_type action;
-    string filename;
-    vector<unsigned char> data;
+//The message has three action types, request, deny, and data. This enum is used
+//to specify which should be/has been used.
+namespace action_type{
+    enum Enum{REQUEST, DENY, DATA};
 };
 
-class file_agent{
-    private:
-
-        //Contains two messages, one for incoming and one for outgoing
-        //Outgoing can be modified and then sent
-        //Incoming can be received and then queried
-        file_message outgoing;
-        file_message incoming;
-
-        //Helper function 
-
+//Each message, incoming or outgoing, contains the following
+class file_message{
     public:
+        string str();       //Obtain a string representation of the messsage
 
-        void set_outgoing_filename();
-        string get_filename();
+    private:
+        action_type::Enum action;
+        string filename;
+        vector<unsigned char> data;
+};
 
-        //Attach data to the outgoing message and extract data from the incoming
-        //message.
+//Outgoing message type, only allows modification of fields and sending
+class outgoing_message: file_message{
+    public:
+        void set_action(action_type::Enum);
+        void set_filename(string);
         void attach_data(istream&);
-        void extract_data(ostream&);
+        //TODO send
+};
 
-        //Send the outgoing message or receive into the incoming message
-        void send_out();
-        void recv_in();
+//Incoming message type, only allows receiving and getting fields
+class incoming_message: file_message{
+    public:
+        action_type::Enum get_action();
+        string get_filename();
+        void extract_data(ostream&);
+        //TODO recv
 };
 
 #endif
