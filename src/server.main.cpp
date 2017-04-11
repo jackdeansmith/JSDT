@@ -6,7 +6,7 @@ using std::string; using std::stoi;
 using std::cout; using std::cerr; using std::endl;
 #include <stdexcept>
 //My headers for reliable data transfer and for file transfer
-#include "file_layer.hpp"
+#include "jstp_message.hpp"
 
 //Usage, <executable> portnumber
 int main(int argc, char* argv[]){

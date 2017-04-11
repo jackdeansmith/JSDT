@@ -2,11 +2,11 @@
 #TODO boilerplate
 
 #The compiler
-CXX = g++ -std=c++11 -Wall
+CXX = g++ -std=c++0x -Wall
 
 #Objects needed to build the sender and receiver
-server_objects = ./build/server.o ./build/file_layer.o
-client_objects = ./build/client.o ./build/file_layer.o
+server_objects = ./build/server.o ./build/jstp_message.o
+client_objects = ./build/client.o ./build/jstp_message.o
 
 #Make all, the default
 all : ./bin/server ./bin/client
@@ -21,14 +21,14 @@ all : ./bin/server ./bin/client
 	$(CXX) $(client_objects) -o $@
 
 #Make the objects
-./build/server.o : ./src/server.main.cpp ./src/file_layer.hpp
+./build/server.o : ./src/server.main.cpp ./src/jstp_message.hpp
 	$(CXX) -c ./src/server.main.cpp -o $@
 
-./build/client.o : ./src/client.main.cpp ./src/file_layer.hpp
+./build/client.o : ./src/client.main.cpp ./src/jstp_message.hpp
 	$(CXX) -c ./src/client.main.cpp -o $@
 
-./build/file_layer.o : ./src/file_layer.hpp ./src/file_layer.cpp
-	$(CXX) -c ./src/file_layer.cpp -o $@
+./build/jstp_message.o : ./src/jstp_message.hpp ./src/jstp_message.cpp
+	$(CXX) -c ./src/jstp_message.cpp -o $@
 
 .PHONY: clean
 clean :

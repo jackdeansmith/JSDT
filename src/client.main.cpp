@@ -6,7 +6,7 @@ using std::string; using std::stoi;
 #include <exception>
 
 //My headers for reliable data transfer and for file transfer
-#include "file_layer.hpp"
+#include "jstp_message.hpp"
 
 //Main function for the client
 int main(int argc, char* argv[]){
