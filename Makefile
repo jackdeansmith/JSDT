@@ -2,7 +2,7 @@
 #TODO boilerplate
 
 #The compiler
-CXX = g++ -std=c++11 -Wall
+CXX = g++ -std=c++0x -Wall
 
 #Objects needed to build the sender and receiver
 server_objects = ./build/server.o ./build/file_layer.o
