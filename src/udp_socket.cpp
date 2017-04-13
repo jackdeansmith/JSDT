@@ -6,6 +6,7 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <cstring>
 
 //STL stuff
 #include <vector>
