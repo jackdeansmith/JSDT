@@ -1,7 +1,9 @@
 //Implimentation of jstp_segment.hpp
 
-#include "jstp_segment.hpp"
+#include <vector>
+using std::vector;
 
+#include "jstp_segment.hpp"
 
 //Getters for header data:
 uint32_t jstp_segment::get_sequence(){

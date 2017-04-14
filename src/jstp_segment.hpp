@@ -23,8 +23,6 @@
 
 #include <stdint.h>
 #include <vector>
-using std::vector;
-
 #include "udp_socket.hpp"
 
 class jstp_segment: public serializable{
@@ -64,19 +62,19 @@ class jstp_segment: public serializable{
 
         //Interact with the payload
         void clear_payload();
-        void set_payload(vector<uint8_t>);
-        vector<uint8_t>::iterator payload_begin();
-        vector<uint8_t>::iterator payload_end();
+        void set_payload(std::vector<uint8_t>);
+        std::vector<uint8_t>::iterator payload_begin();
+        std::vector<uint8_t>::iterator payload_end();
 
         //The key functionality, serializes the segment in a compleetly platform
         //independant fashion.
-        vector<uint8_t> serialize();
-        void deserialize(const vector<uint8_t>&);
+        std::vector<uint8_t> serialize();
+        void deserialize(const std::vector<uint8_t>&);
 
     private:
 
         //Header data, the length header is not maintained separatly because it
-        //is simply the size of the payload vector.
+        //is simply the size of the payload std::vector.
         uint32_t sequence;
         uint32_t ack;
         uint32_t window;
@@ -84,5 +82,5 @@ class jstp_segment: public serializable{
         uint16_t port;
 
         //Payload data
-        vector<uint8_t> payload;
+        std::vector<uint8_t> payload;
 }
