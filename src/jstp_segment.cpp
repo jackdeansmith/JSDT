@@ -31,15 +31,15 @@ uint16_t jstp_segment::get_port(){
 }
 
 bool jstp_segment::get_syn_flag(){
-
+    return (flags >> 15) & 1;
 }
 
 bool jstp_segment::get_ack_flag(){
-
+    return (flags >> 14) & 1;
 }
 
 bool jstp_segment::get_close_flag(){
-
+    return (flags >> 13) & 1;
 }
 
 //Setters for header data:
@@ -60,27 +60,27 @@ void jstp_segment::set_port(uint16_t in){
 }
 
 void jstp_segment::set_syn_flag(){
-
+    flags |= 1 << 15;
 }
 
 void jstp_segment::set_ack_flag(){
-
+    flags |= 1 << 14;
 }
 
 void jstp_segment::set_close_flag(){
-
+    flags |= 1 << 13;
 }
 
 void jstp_segment::reset_syn_flag(){
-
+    flags &= ~(1 << 15);
 }
 
 void jstp_segment::reset_ack_flag(){
-
+    flags &= ~(1 << 14);
 }
 
 void jstp_segment::reset_close_flag(){
-
+    flags &= ~(1 << 13);
 }
 
 //Interface for payload
