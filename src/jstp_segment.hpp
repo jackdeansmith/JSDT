@@ -27,7 +27,9 @@ using std::vector;
 #include <bitset>
 using std::bitset;
 
-class jstp_segment{
+#include "udp_socket.hpp"
+
+class jstp_segment: public serializable{
     public:
 
         //Constants which define the max segment size and the max payload size
@@ -36,13 +38,13 @@ class jstp_segment{
         static const size_t MAX_SEGMENT_SIZE = 1024;
         static const size_t MAX_PAYLOAD_SIZE = 1004;
 
-        //A jstp_segment can be constructed empty or from a serialized repr.
+        //A jstp_segment can be constructed empty.
         jstp_segment() = default;
-        jstp_segment(const vector<uint8_t>&);
 
         //The key functionality, serializes the segment in a compleetly platform
         //independant fashion.
         vector<uint8_t> serialize();
+        void deserialize(const vector<uint8_t>&);
 
         //Getters for header data
         uint32_t get_sequence();
