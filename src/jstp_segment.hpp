@@ -36,13 +36,8 @@ class jstp_segment: public serializable{
         static const size_t MAX_SEGMENT_SIZE = 1024;
         static const size_t MAX_PAYLOAD_SIZE = 1004;
 
-        //A jstp_segment can be constructed empty.
+        //Explicitly only the default constructor
         jstp_segment() = default;
-
-        //The key functionality, serializes the segment in a compleetly platform
-        //independant fashion.
-        vector<uint8_t> serialize();
-        void deserialize(const vector<uint8_t>&);
 
         //Getters for header data
         uint32_t get_sequence();
@@ -55,23 +50,28 @@ class jstp_segment: public serializable{
         bool get_close_flag();
 
         //Setters for header data
+        void set_sequence(uint32_t);
+        void set_ack(uint32_t);
+        void set_window(uint32_t);
+        //note: there is no setter for length, it is determined by the payload
+        void set_port(uint16_t);
         void set_syn_flag();
         void set_ack_flag();
         void set_close_flag();
         void reset_syn_flag();
         void reset_ack_flag();
         void reset_close_flag();
-        void set_sequence(uint32_t);
-        void set_ack(uint32_t);
-        void set_window(uint32_t);
-        //note: there is no setter for length, it is determined by the payload
-        void set_port(uint16_t);
 
         //Interact with the payload
         void clear_payload();
         void set_payload(vector<uint8_t>);
         vector<uint8_t>::iterator payload_begin();
         vector<uint8_t>::iterator payload_end();
+
+        //The key functionality, serializes the segment in a compleetly platform
+        //independant fashion.
+        vector<uint8_t> serialize();
+        void deserialize(const vector<uint8_t>&);
 
     private:
 

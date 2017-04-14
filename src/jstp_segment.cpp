@@ -2,14 +2,8 @@
 
 #include "jstp_segment.hpp"
 
-vector<uint8_t> jstp_segment::serialize(){
 
-}
-
-void jstp_segment::deserialize(const vector<uint8_t>&){
-
-}
-
+//Getters for header data:
 uint32_t jstp_segment::get_sequence(){
 
 }
@@ -42,6 +36,23 @@ bool jstp_segment::get_close_flag(){
 
 }
 
+//Setters for header data:
+void jstp_segment::set_sequence(uint32_t){
+
+}
+
+void jstp_segment::set_ack(uint32_t){
+
+}
+
+void jstp_segment::set_window(uint32_t){
+
+}
+
+void jstp_segment::set_port(uint16_t){
+
+}
+
 void jstp_segment::set_syn_flag(){
 
 }
@@ -66,22 +77,7 @@ void jstp_segment::reset_close_flag(){
 
 }
 
-void jstp_segment::set_sequence(uint32_t){
-
-}
-
-void jstp_segment::set_ack(uint32_t){
-
-}
-
-void jstp_segment::set_window(uint32_t){
-
-}
-
-void jstp_segment::set_port(uint16_t){
-
-}
-
+//Interface for payload
 void jstp_segment::clear_payload(){
 
 }
@@ -95,6 +91,16 @@ vector<uint8_t>::iterator jstp_segment::payload_begin(){
 }
 
 vector<uint8_t>::iterator jstp_segment::payload_end(){
+
+}
+
+//Serialize and Deserialize methods, required in order to make this class
+//serializable.
+vector<uint8_t> jstp_segment::serialize(){
+
+}
+
+void jstp_segment::deserialize(const vector<uint8_t>&){
 
 }
 
