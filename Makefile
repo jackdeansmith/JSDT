@@ -5,8 +5,8 @@
 CXX = g++ -std=c++0x -Wall
 
 #Objects needed to build the sender and receiver
-server_objects = ./build/server.o ./build/file_layer.o
-client_objects = ./build/client.o ./build/file_layer.o
+server_objects = ./build/server.o ./build/file_layer.o ./build/udp_socket.o
+client_objects = ./build/client.o ./build/file_layer.o ./build/udp_socket.o
 
 #Make all, the default
 all : ./bin/server ./bin/client
@@ -29,6 +29,9 @@ all : ./bin/server ./bin/client
 
 ./build/file_layer.o : ./src/file_layer.hpp ./src/file_layer.cpp
 	$(CXX) -c ./src/file_layer.cpp -o $@
+
+./build/udp_socket.o : ./src/udp_socket.cpp ./src/udp_socket.hpp
+	$(CXX) -c ./src/udp_socket.cpp -o $@
 
 .PHONY: clean
 clean :
