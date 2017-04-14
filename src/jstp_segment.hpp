@@ -83,4 +83,4 @@ class jstp_segment: public serializable{
 
         //Payload data
         std::vector<uint8_t> payload;
-}
+};
