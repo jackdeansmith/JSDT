@@ -33,6 +33,9 @@ all : ./bin/server ./bin/client
 ./build/udp_socket.o : ./src/udp_socket.cpp ./src/udp_socket.hpp
 	$(CXX) -c ./src/udp_socket.cpp -o $@
 
+./build/jstp_segment.o : ./src/jstp_segment.hpp ./src/jstp_segment.cpp
+	$(CXX) -c ./src/jstp_segment.cpp -o $@
+
 .PHONY: clean
 clean :
 	rm ./bin/* ./build/*
