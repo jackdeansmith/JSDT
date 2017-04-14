@@ -1,5 +1,8 @@
 //Implimentation of jstp_segment.hpp
 
+#include <netinet/in.h>
+#include <cstring>
+
 #include <vector>
 using std::vector;
 #include <iterator>
@@ -108,7 +111,41 @@ vector<uint8_t>::const_iterator jstp_segment::payload_end(){
 //Serialize and Deserialize methods, required in order to make this class
 //serializable.
 vector<uint8_t> jstp_segment::serialize(){
+    //First reserve the necessary size for the vector
+    vector<uint8_t> out;
+    out.reserve(HEADER_SIZE + payload.size());
 
+    //For each header field, we need to convert the number to network order then
+    //cast the number to uint8s and write them to the data output.
+    uint8_t arr[4];
+
+    uint32_t sequence_net = htonl(sequence);
+    memcpy(arr, sequence_net, 4);
+    copy(arr, arr + 4, back_inserter(out));
+
+    uint32_t ack_net = htonl(ack);
+    memcpy(arr, ack_net, 4);
+    copy(arr, arr + 4, back_inserter(out));
+
+    uint32_t window_net = htonl(window);
+    memcpy(arr, window_net, 4);
+    copy(arr, arr + 4, back_inserter(out));
+
+    uint32_t length_net = htonl(payload.size());
+    memcpy(arr, length_net, 4);
+    copy(arr, arr + 4, back_inserter(out));
+
+    uint16_t flags_net = htons(flags);
+    memcpy(arr, length_net, 2);
+    copy(arr, arr + 2, back_inserter(out));
+
+    uint16_t port_net = htons(port);
+    memcpy(arr, length_net, 2);
+    copy(arr, arr + 2, back_inserter(out));
+
+    //Lastly, copy the payload over into the serialized data and return it
+    copy(payload.begin(), payload.end(), back_inserter(out));
+    return out;
 }
 
 void jstp_segment::deserialize(const vector<uint8_t>&){

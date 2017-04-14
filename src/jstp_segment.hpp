@@ -32,6 +32,7 @@ class jstp_segment: public serializable{
         //for the segment. These values differ by exactly the size of the
         //headers. Length of headers = 20 bytes.
         static const size_t MAX_SEGMENT_SIZE = 1024;
+        static const size_t HEADER_SIZE = 20;
         static const size_t MAX_PAYLOAD_SIZE = 1004;
 
         //Explicitly only the default constructor
