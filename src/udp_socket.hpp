@@ -1,12 +1,6 @@
-/* This header defines a wrapper class for UDP sockets which makes them play
- * nice with c++. Using this class prevents buffer overflows and other such
- * problems by requiring a max segment size on construction, any packets longer
- * than this are automatically truncated.
- *
- * This wrapper allows the user to ignore endianess concerns when setting port
- * numbers and addresses by doing this behind the scenes. It does NOT, however, 
- * do anything to byte ordering of payload data, this problem must be dealt with
- * when objects are serialized.
+/* This header defines a wraping class for UDP sockets and an abstract class
+ * which can be inherited from to indicate that an object is serializable and
+ * thus can be sent over the UDP socket.
  */
 
 #pragma once
@@ -16,17 +10,27 @@
 #include <cstdint>
 #include <netinet/in.h>
 
-//An object is said to be serializable if it has a function which creates a
-//vector of uint8_t which represents it and an arbitrary object of the same type
-//can be put in exactly the same state as the first object using this vector and
-//the deserialize method. Thus, there must be a bijective corispondance between
-//objects and their serialized representation
+// Abstract class representing the concept of serializability. The udp socket is
+// set up to be able to send and receive any object which is serializable given
+// a large enough maximum segment size.
+// Classes should only inherit from serializable if their serialized
+// representation compleetly defines their state and two objects deserialized
+// from the same representation are indistinguashable. 
 class serializable{
     public:
         virtual std::vector<uint8_t> serialize() = 0;
         virtual void deserialize(const std::vector<uint8_t>&) = 0;
 };
 
+// A class which wraps a UDP socket and makes it play nice with c++. Using this
+// class prevents buffer overflows by requiring the user specify the max segment
+// size the socket can handle at constructin. Any packets longer than this are
+// truncated.
+//
+// This wrapper allows the user to ignore endianess concerns when setting port
+// numbers and addresses by doing this behind the scenes. It does NOT, however, 
+// do anything to byte ordering of payload data, this problem must be dealt with
+// when objects are serialized.
 class udp_socket{
 
     public:
@@ -67,7 +71,7 @@ class udp_socket{
 
         //The maximum segment size and a buffer of this size used for receiving
         //raw data from the network.
-        size_t mss;
+        size_t max_segment_size;
         uint8_t* recv_buffer;
 
         //The address of our peer and ourselves

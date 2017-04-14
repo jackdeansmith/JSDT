@@ -19,10 +19,10 @@ using std::copy;
 using std::back_inserter;
 
 //Construct a socket with support for segments of up to mss in size.
-udp_socket::udp_socket(size_t mss_in){
+udp_socket::udp_socket(size_t mss){
 
     //Set the max segment size
-    mss = mss_in;
+    max_segment_size = mss;
 
     //Use the socket syscall to request a socket for use with UDP
     fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -33,7 +33,7 @@ udp_socket::udp_socket(size_t mss_in){
     }
 
     //Allocate space for the receiving buffer
-    recv_buffer = new uint8_t[mss];
+    recv_buffer = new uint8_t[max_segment_size];
 }
 
 //Destruct the socket, simply close the file descriptor freeing it up and delete
@@ -131,7 +131,7 @@ vector<uint8_t> udp_socket::recv(){
 
     //Make a call to recvfrom and put the data in recv_buffer, keep track of how
     //many bytes we actually got
-    size_t count = recvfrom(fd, recv_buffer, mss, 0, 0, 0);
+    size_t count = recvfrom(fd, recv_buffer, max_segment_size, 0, 0, 0);
 
     //Create an output vector and reserve space for all the data we just got
     vector<uint8_t> output;
@@ -142,10 +142,12 @@ vector<uint8_t> udp_socket::recv(){
     return output;
 }
 
+//Send a serializable object TODO error checking
 void udp_socket::send(serializable& obj){
     send(obj.serialize());
 }
 
+//Recv a serializable object
 void udp_socket::recv(serializable& obj){
     obj.deserialize(recv());
 }
