@@ -141,3 +141,11 @@ vector<uint8_t> udp_socket::recv(){
     copy(recv_buffer, recv_buffer + count, back_inserter(output));
     return output;
 }
+
+void udp_socket::send(serializable& obj){
+    send(obj.serialize());
+}
+
+void udp_socket::recv(serializable& obj){
+    obj.deserialize(recv());
+}

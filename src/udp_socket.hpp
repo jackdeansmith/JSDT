@@ -16,6 +16,17 @@
 #include <cstdint>
 #include <netinet/in.h>
 
+//An object is said to be serializable if it has a function which creates a
+//vector of uint8_t which represents it and an arbitrary object of the same type
+//can be put in exactly the same state as the first object using this vector and
+//the deserialize method. Thus, there must be a bijective corispondance between
+//objects and their serialized representation
+class serializable{
+    public:
+        virtual std::vector<uint8_t> serialize() = 0;
+        virtual void deserialize(const std::vector<uint8_t>&) = 0;
+};
+
 class udp_socket{
 
     public:
@@ -40,6 +51,10 @@ class udp_socket{
         //as uint8_t vectors.
         void send(const std::vector<uint8_t>&);
         std::vector<uint8_t> recv();
+
+        //Send and receive any sendable object
+        void send(serializable&);
+        void recv(serializable&);
 
     private:
 
