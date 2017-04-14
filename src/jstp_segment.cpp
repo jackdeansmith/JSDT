@@ -23,7 +23,7 @@ uint32_t jstp_segment::get_window(){
 }
 
 uint32_t jstp_segment::get_length(){
-    return payload.length();
+    return payload.size();
 }
 
 uint16_t jstp_segment::get_port(){

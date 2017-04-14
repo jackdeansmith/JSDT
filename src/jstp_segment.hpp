@@ -62,7 +62,7 @@ class jstp_segment: public serializable{
 
         //Interact with the payload
         void clear_payload();
-        void set_payload(std::vector<uint8_t>);
+        void set_payload(const std::vector<uint8_t>&);
         std::vector<uint8_t>::const_iterator payload_begin();
         std::vector<uint8_t>::const_iterator payload_end();
 
