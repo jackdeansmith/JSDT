@@ -19,7 +19,10 @@ using std::copy;
 using std::back_inserter;
 
 //Construct a socket with support for segments of up to mss in size.
-udp_socket::udp_socket(size_t mss){
+udp_socket::udp_socket(size_t mss_in){
+
+    //Set the max segment size
+    mss = mss_in;
 
     //Use the socket syscall to request a socket for use with UDP
     fd = socket(AF_INET, SOCK_DGRAM, 0);
