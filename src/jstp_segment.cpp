@@ -102,6 +102,6 @@ vector<uint8_t>::iterator jstp_segment::payload_end(){
 /* uint32_t sequence; */
 /* uint32_t ack; */
 /* uint32_t window; */
-/* bitset<16> flags; */
 /* uint16_t port; */
+/* uint16_t flags; */
 /* vector<uint8_t> payload; */

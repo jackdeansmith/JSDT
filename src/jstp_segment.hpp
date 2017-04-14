@@ -24,8 +24,6 @@
 #include <stdint.h>
 #include <vector>
 using std::vector;
-#include <bitset>
-using std::bitset;
 
 #include "udp_socket.hpp"
 
@@ -82,7 +80,7 @@ class jstp_segment: public serializable{
         uint32_t sequence;
         uint32_t ack;
         uint32_t window;
-        bitset<16> flags;
+        uint16_t flags;
         uint16_t port;
 
         //Payload data
