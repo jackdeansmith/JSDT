@@ -120,27 +120,27 @@ vector<uint8_t> jstp_segment::serialize(){
     uint8_t arr[4];
 
     uint32_t sequence_net = htonl(sequence);
-    memcpy(arr, sequence_net, 4);
+    memcpy(arr, &sequence_net, 4);
     copy(arr, arr + 4, back_inserter(out));
 
     uint32_t ack_net = htonl(ack);
-    memcpy(arr, ack_net, 4);
+    memcpy(arr, &ack_net, 4);
     copy(arr, arr + 4, back_inserter(out));
 
     uint32_t window_net = htonl(window);
-    memcpy(arr, window_net, 4);
+    memcpy(arr, &window_net, 4);
     copy(arr, arr + 4, back_inserter(out));
 
     uint32_t length_net = htonl(payload.size());
-    memcpy(arr, length_net, 4);
+    memcpy(arr, &length_net, 4);
     copy(arr, arr + 4, back_inserter(out));
 
     uint16_t flags_net = htons(flags);
-    memcpy(arr, length_net, 2);
+    memcpy(arr, &flags_net, 2);
     copy(arr, arr + 2, back_inserter(out));
 
     uint16_t port_net = htons(port);
-    memcpy(arr, length_net, 2);
+    memcpy(arr, &port_net, 2);
     copy(arr, arr + 2, back_inserter(out));
 
     //Lastly, copy the payload over into the serialized data and return it
@@ -148,8 +148,35 @@ vector<uint8_t> jstp_segment::serialize(){
     return out;
 }
 
-void jstp_segment::deserialize(const vector<uint8_t>&){
+void jstp_segment::deserialize(const vector<uint8_t>& v){
+    auto ptr = v.data();
 
+    uint32_t sequence_net;
+    memcpy(&sequence_net, ptr, 4); ptr += 4;
+    sequence = ntohl(sequence_net);
+
+    uint32_t ack_net;
+    memcpy(&ack_net, ptr, 4); ptr += 4;
+    ack = ntohl(ack_net);
+
+    uint32_t window_net;
+    memcpy(&window_net, ptr, 4); ptr += 4;
+    window = ntohl(window_net);
+
+    uint32_t length_net;
+    memcpy(&length_net, ptr, 4); ptr += 4;
+    uint32_t length = ntohl(length_net);
+
+    uint16_t flags_net;
+    memcpy(&flags_net, ptr, 2); ptr += 2;
+    flags = ntohs(flags_net);
+
+    uint16_t port_net;
+    memcpy(&port_net, ptr, 2); ptr += 2;
+    port = ntohs(port_net);
+
+    payload.clear();
+    copy(v.begin() + 20, v.begin() + 20 + length, back_inserter(payload));
 }
 
 //Private data members I can use
