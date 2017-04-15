@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 #include <vector>
+#include <string>
 #include "udp_socket.hpp"
 
 class jstp_segment: public serializable{
@@ -71,6 +72,10 @@ class jstp_segment: public serializable{
         //independant fashion.
         std::vector<uint8_t> serialize();
         void deserialize(const std::vector<uint8_t>&);
+
+        //Mostly for debugging, this method produces a string representing the
+        //segment.
+        std::string str();
 
     private:
 

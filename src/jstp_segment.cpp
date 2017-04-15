@@ -9,6 +9,10 @@ using std::vector;
 using std::back_inserter;
 #include <algorithm>
 using std::copy;
+#include <string>
+using std::string;
+#include <sstream>
+using std::ostringstream; using std::endl;
 
 #include "jstp_segment.hpp"
 
@@ -177,6 +181,29 @@ void jstp_segment::deserialize(const vector<uint8_t>& v){
 
     payload.clear();
     copy(v.begin() + 20, v.begin() + 20 + length, back_inserter(payload));
+}
+
+string jstp_segment::str(){
+   ostringstream oss; 
+   oss << "Headers for JSTP Segment:" << endl;
+   oss << "    Sequence Number = " << get_sequence() << endl;
+   oss << "    Ack Number      = " << get_ack() << endl;
+   oss << "    Window Length   = " << get_window() << endl;
+   oss << "    Payload Length  = " << get_length() << endl;
+
+   oss << "    Flags           = ";
+   if(get_syn_flag()){
+       oss << "SYN, ";
+   }
+   if(get_ack_flag()){
+        oss << "ACK, "; 
+   }
+   if(get_close_flag()){
+        oss << "CLOSE"; 
+   }
+   oss << endl;
+   oss << "    Port            = " << get_port() << endl;
+   return oss.str();
 }
 
 //Private data members I can use
