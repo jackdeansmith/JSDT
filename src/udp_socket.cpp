@@ -17,6 +17,8 @@ using std::string;
 using std::copy;
 #include <iterator>
 using std::back_inserter;
+#include <utility>
+using std::swap;
 
 //Construct a socket with support for segments of up to mss in size.
 udp_socket::udp_socket(size_t mss){
@@ -34,6 +36,41 @@ udp_socket::udp_socket(size_t mss){
 
     //Allocate space for the receiving buffer
     recv_buffer = new uint8_t[max_segment_size];
+}
+
+//Copy constructor
+udp_socket::udp_socket(udp_socket& other){
+    //Importantly, we can't just copy the file descriptor, we need to duplicate
+    //it.
+    fd = dup(other.fd);
+
+    //We can copy the other parameters verbatim.
+    has_peer = other.has_peer;
+    bound = other.bound;
+    max_segment_size = other.max_segment_size;
+    peer_addr = other.peer_addr;
+    local_addr = other.local_addr;
+
+    //Finally, we just need to allocate space for the recv buffer
+    recv_buffer = new uint8_t[max_segment_size];
+}
+
+//Swap operation
+void udp_socket::swap(udp_socket& l, udp_socket& r){
+    using std::swap;
+    swap(l.fd, r.fd);
+    swap(l.has_peer, r.has_peer);
+    swap(l.bound, r.bound);
+    swap(l.max_segment_size, r.max_segment_size);
+    swap(l.peer_addr, r.peer_addr);
+    swap(l.local_addr, r.local_addr);
+    swap(l.recv_buffer, r.recv_buffer);
+}
+
+//Copy assignment operator, using copy swap idiom
+udp_socket& udp_socket::operator=(udp_socket other){
+    swap(*this, other);
+    return *this;
 }
 
 //Destruct the socket, simply close the file descriptor freeing it up and delete

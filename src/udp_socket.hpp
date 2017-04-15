@@ -34,8 +34,11 @@ class serializable{
 class udp_socket{
 
     public:
-        //Constructor and Destructor, TODO add copy/move capability?
+        //Rule of N stuff
         udp_socket(size_t mss);
+        udp_socket(udp_socket& other);
+        void swap(udp_socket& l, udp_socket& r);
+        udp_socket& operator=(udp_socket other);
         ~udp_socket();
 
         //Bind the socket to a port on the local machine, bind_local_any binds
