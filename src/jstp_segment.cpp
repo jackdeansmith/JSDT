@@ -183,7 +183,7 @@ void jstp_segment::deserialize(const vector<uint8_t>& v){
     copy(v.begin() + 20, v.begin() + 20 + length, back_inserter(payload));
 }
 
-string jstp_segment::str(){
+string jstp_segment::header_str(){
    ostringstream oss; 
    oss << "Headers for JSTP Segment:" << endl;
    oss << "    Sequence Number = " << get_sequence() << endl;
@@ -204,6 +204,15 @@ string jstp_segment::str(){
    oss << endl;
    oss << "    Port            = " << get_port() << endl;
    return oss.str();
+}
+
+string jstp_segment::payload_str(){
+    ostringstream oss;
+    oss << "Payload for JSTP segment:" << endl << "    ";
+    string s;
+    copy(payload.begin(), payload.end(), back_inserter(s));
+    oss << s;
+    return oss.str();
 }
 
 //Private data members I can use

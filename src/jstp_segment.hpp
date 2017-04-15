@@ -75,7 +75,8 @@ class jstp_segment: public serializable{
 
         //Mostly for debugging, this method produces a string representing the
         //segment.
-        std::string str();
+        std::string header_str();
+        std::string payload_str();
 
     private:
 
