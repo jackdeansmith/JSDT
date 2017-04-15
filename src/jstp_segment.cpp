@@ -1,8 +1,10 @@
 //Implimentation of jstp_segment.hpp
 
+//C std lib
 #include <netinet/in.h>
 #include <cstring>
 
+//STL
 #include <vector>
 using std::vector;
 #include <iterator>
@@ -14,6 +16,7 @@ using std::string;
 #include <sstream>
 using std::ostringstream; using std::endl;
 
+//Our source
 #include "jstp_segment.hpp"
 
 //Getters for header data:
@@ -183,6 +186,7 @@ void jstp_segment::deserialize(const vector<uint8_t>& v){
     copy(v.begin() + 20, v.begin() + 20 + length, back_inserter(payload));
 }
 
+//Get a string summarizing the headers
 string jstp_segment::header_str(){
    ostringstream oss; 
    oss << "Headers for JSTP Segment:" << endl;
@@ -206,6 +210,7 @@ string jstp_segment::header_str(){
    return oss.str();
 }
 
+//Get a string summarizing the payload
 string jstp_segment::payload_str(){
     ostringstream oss;
     oss << "Payload for JSTP segment:" << endl << "    ";
@@ -214,11 +219,3 @@ string jstp_segment::payload_str(){
     oss << s;
     return oss.str();
 }
-
-//Private data members I can use
-/* uint32_t sequence; */
-/* uint32_t ack; */
-/* uint32_t window; */
-/* uint16_t port; */
-/* uint16_t flags; */
-/* vector<uint8_t> payload; */

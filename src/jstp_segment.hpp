@@ -26,6 +26,7 @@
 #include <string>
 #include "udp_socket.hpp"
 
+//Inherit serializable so that we can esily send and receive over UDP
 class jstp_segment: public serializable{
     public:
 
@@ -36,7 +37,8 @@ class jstp_segment: public serializable{
         static const size_t HEADER_SIZE = 20;
         static const size_t MAX_PAYLOAD_SIZE = 1004;
 
-        //Explicitly only the default constructor
+        //Explicitly only the default constructor, default move copy etc. should
+        //all be just fine, we just use STL in this class.
         jstp_segment() = default;
 
         //Getters for header data
@@ -73,8 +75,8 @@ class jstp_segment: public serializable{
         std::vector<uint8_t> serialize();
         void deserialize(const std::vector<uint8_t>&);
 
-        //Mostly for debugging, this method produces a string representing the
-        //segment.
+        //Get strings which summarize the data in the headers and in the
+        //payload, this is useful for debugging.
         std::string header_str();
         std::string payload_str();
 
