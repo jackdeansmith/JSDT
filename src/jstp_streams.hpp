@@ -31,6 +31,7 @@ class jstp_connector{
 class jstp_acceptor{
     friend class jstp_stream;
     public:
+        //TODO destructor
         jstp_acceptor(uint16_t portno);
     private:
         udp_socket acceptor_socket;
@@ -47,8 +48,8 @@ class jstp_stream{
         //Can't be coppied or moved
         jstp_stream(jstp_stream& other) = delete;
 
-        //Destructor does cleanup
-        ~jstp_stream();
+        //Destructor does cleanup TODO
+        /* ~jstp_stream(); */
 
         //TODO send and receive interface
     private:

@@ -7,6 +7,7 @@ using std::cout; using std::cerr; using std::endl;
 #include <stdexcept>
 //My headers for reliable data transfer and for file transfer
 #include "file_layer.hpp"
+#include "jstp_streams.hpp"
 
 //Usage, <executable> portnumber
 int main(int argc, char* argv[]){
@@ -55,6 +56,10 @@ int main(int argc, char* argv[]){
     cout << "You have requested that I use the following information." << endl;
     cout << "Listening Port Number: " << portnum << endl;
     cout << endl;
+
+    //Create an acceptor object, use it to try and open a stream
+    jstp_acceptor acceptor(portnum);
+    jstp_stream stream(acceptor);
 
     return 0;
 }

@@ -7,6 +7,7 @@ using std::string; using std::stoi;
 
 //My headers for reliable data transfer and for file transfer
 #include "file_layer.hpp"
+#include "jstp_streams.hpp"
 
 //Main function for the client
 int main(int argc, char* argv[]){
@@ -63,6 +64,10 @@ int main(int argc, char* argv[]){
     cout << "    Sender Port    : " << sender_portnum << endl;
     cout << "    Filename       : " << filename << endl;
     cout << endl;
+
+    //Create a connector and try to use it to construct a stream
+    jstp_connector connector(sender_hostname, sender_portnum);
+    jstp_stream stream(connector);
 
     return 0;
 };
