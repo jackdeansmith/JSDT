@@ -6,9 +6,9 @@ CXX = g++ -std=c++0x -Wall
 
 #Objects needed to build the sender and receiver
 server_objects = ./build/server.o ./build/file_layer.o ./build/udp_socket.o \
-				 ./build/jstp_segment.o
+				 ./build/jstp_segment.o ./build/jstp_streams.o
 client_objects = ./build/client.o ./build/file_layer.o ./build/udp_socket.o \
-				 ./build/jstp_segment.o
+				 ./build/jstp_segment.o ./build/jstp_streams.o
 
 #Make all, the default
 all : ./bin/server ./bin/client
@@ -37,6 +37,9 @@ all : ./bin/server ./bin/client
 
 ./build/jstp_segment.o : ./src/jstp_segment.hpp ./src/jstp_segment.cpp
 	$(CXX) -c ./src/jstp_segment.cpp -o $@
+
+./build/jstp_streams.o : ./src/jstp_streams.cpp
+	$(CXX) -c ./src/jstp_streams.cpp -o $@
 
 .PHONY: clean
 clean :
