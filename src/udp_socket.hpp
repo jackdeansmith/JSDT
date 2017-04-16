@@ -51,8 +51,14 @@ class udp_socket{
         unsigned short bound_to();
 
         //Allow the user to specify the peer, that is, where the packets go when
-        //they are sent out. TODO add getter?
+        //they are sent out.
         void set_peer(std::string hostname, unsigned short port);
+        void set_peer(const sockaddr_in&);
+
+        //Getters for the loacl address, peer address, and last received address
+        const sockaddr_in get_local_addr();
+        const sockaddr_in get_peer_addr();
+        const sockaddr_in get_last_addr();
 
         //Primary interface, send and receive arbitrary serial data represented
         //as uint8_t vectors.
@@ -77,7 +83,9 @@ class udp_socket{
         size_t max_segment_size;
         uint8_t* recv_buffer;
 
-        //The address of our peer and ourselves
+        //The address of our peer and ourselves as well as the last person who
+        //send us something.
         sockaddr_in peer_addr;
         sockaddr_in local_addr;
+        sockaddr_in last_recvd_addr;
 };

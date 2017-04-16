@@ -143,6 +143,21 @@ void udp_socket::set_peer(string hostname, unsigned short port){
     has_peer = true;
 }
 
+void udp_socket::set_peer(const sockaddr_in& addr){
+    peer_addr = addr;
+    has_peer = true;
+}
+
+const sockaddr_in udp_socket::get_local_addr(){
+    return local_addr;
+}
+const sockaddr_in udp_socket::get_peer_addr(){
+    return peer_addr;
+}
+const sockaddr_in udp_socket::get_last_addr(){
+    return last_recvd_addr;
+}
+
 //Send arbitrary data to our peer in a single segment
 void udp_socket::send(const vector<uint8_t>& v){
 
@@ -166,9 +181,11 @@ vector<uint8_t> udp_socket::recv(){
         //TODO throw exception. 
     }
 
-    //Make a call to recvfrom and put the data in recv_buffer, keep track of how
-    //many bytes we actually got
-    size_t count = recvfrom(fd, recv_buffer, max_segment_size, 0, 0, 0);
+    //Make a call to recv from, place the address of the person we received from
+    //into the last_recvd_addr struct
+    int len = sizeof(last_recvd_addr);
+    size_t count = recvfrom(fd, recv_buffer, max_segment_size, 0, 
+            (struct sockaddr *) &last_recvd_addr, (socklen_t *)&len);
 
     //Create an output vector and reserve space for all the data we just got
     vector<uint8_t> output;
