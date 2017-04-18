@@ -51,7 +51,10 @@ class jstp_stream{
         //Destructor does cleanup TODO
         /* ~jstp_stream(); */
 
-        //TODO send and receive interface
+        //Interface to the streams, looks a lot like TCP for a reason
+        size_t send(void* buffer, size_t length);
+        size_t recv(void* buffer, size_t length);
+
     private:
         udp_socket stream_sock;
         //TODO lots and lots of impl details here
