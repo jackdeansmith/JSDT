@@ -38,7 +38,7 @@ all : ./bin/server ./bin/client
 ./build/jstp_segment.o : ./src/jstp_segment.hpp ./src/jstp_segment.cpp
 	$(CXX) -c ./src/jstp_segment.cpp -o $@
 
-./build/jstp_streams.o : ./src/jstp_streams.cpp
+./build/jstp_streams.o : ./src/jstp_streams.cpp ./src/jstp_streams.hpp
 	$(CXX) -c ./src/jstp_streams.cpp -o $@
 
 .PHONY: clean
