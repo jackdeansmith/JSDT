@@ -98,4 +98,6 @@ class jstp_stream{
         //The two threads which run to make our data transfer happen
         std::thread sender_thread;
         std::thread receiver_thread;
+        void receiver(std::atomic<bool>& running);
+        void sender(std::atomic<bool>& running);
 };
