@@ -1,5 +1,4 @@
-#ifndef FILE_LAYER
-#define FILE_LAYER
+#pragma once
 
 #include <iostream>
 using std::istream; using std::ostream;
@@ -44,5 +43,3 @@ class incoming_message: public file_message{
         void extract_data(ostream&);
         void recv(jstp_stream&);
 };
-
-#endif
