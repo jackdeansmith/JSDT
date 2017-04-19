@@ -62,8 +62,7 @@ int main(int argc, char* argv[]){
     jstp_acceptor acceptor(portnum);
     cout << "Accetptor created" << endl;
     cout << "Attempting to greate stream" << endl;
-    //TODO make this accept the loss probability
-    jstp_stream stream(acceptor, 0);
+    jstp_stream stream(acceptor, 0);    //TODO use real loss
     cout << "Stream Created" << endl;
 
     return 0;
