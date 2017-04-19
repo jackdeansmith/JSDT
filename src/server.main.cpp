@@ -58,8 +58,12 @@ int main(int argc, char* argv[]){
     cout << endl;
 
     //Create an acceptor object, use it to try and open a stream
+    cout << "Attempting to create acceptor" << endl;
     jstp_acceptor acceptor(portnum);
+    cout << "Accetptor created" << endl;
+    cout << "Attempting to greate stream" << endl;
     jstp_stream stream(acceptor);
+    cout << "Stream Created" << endl;
 
     return 0;
 }

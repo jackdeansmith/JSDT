@@ -13,6 +13,10 @@
 
 //STL includes
 #include <string>
+#include <deque>
+#include <mutex>
+#include <atomic>
+#include <thread>
 
 //Cstd includes
 #include <cstdint>
@@ -41,6 +45,10 @@ class jstp_acceptor{
 //and from both end systems.
 class jstp_stream{
     public:
+        //Settings
+        static const size_t BUFF_CAPACITY = 64000;  //64kB TODO tune this
+        static const size_t RETRANSMIT_DELAY = 1;        //Arbitrary TODO set
+        
         //Constructed from either an acceptor or a connector, no default.
         jstp_stream(jstp_acceptor&);
         jstp_stream(jstp_connector&);
@@ -49,13 +57,44 @@ class jstp_stream{
         jstp_stream(jstp_stream& other) = delete;
 
         //Destructor does cleanup TODO
-        /* ~jstp_stream(); */
+        ~jstp_stream();
 
         //Interface to the streams, looks a lot like TCP for a reason
         size_t send(void* buffer, size_t length);
         size_t recv(void* buffer, size_t length);
 
     private:
+        //Called by the constructors to do things like start threads, allocate
+        //space for buffers etc... This work is shared no matter if we are
+        //initiating the connection or accepting it.
+        void init(uint32_t seq, uint32_t ack);
+
+        //The udp socket used to communicate with the network and the socket
+        //pair used to communicate with the application layer. We will by
+        //convention use sockpair[0] for the application side and
+        //sockpair[1] for the transport side
         udp_socket stream_sock;
-        //TODO lots and lots of impl details here
+        int sockpair[2];
+
+        //Helper function which loads data from the socket pair into the send
+        //buffer. Needs some buffer area for its own use
+        void load_app_data();
+        uint8_t load_buff[BUFF_CAPACITY];
+
+        //Atomics for the ack and sequence number
+        std::atomic<uint8_t> ack_num;
+
+        //Atomic which allows the supervising thread to stop the workers
+        std::atomic<bool> running;
+
+        //The send buffer variables, should only be acessed by one thread at a
+        //time.
+        std::mutex send_buffer_mutex;
+        std::deque<uint8_t> send_buff;
+        uint32_t base_seq_num;
+        uint32_t next_send_index;
+
+        //The two threads which run to make our data transfer happen
+        std::thread sender_thread;
+        std::thread receiver_thread;
 };
