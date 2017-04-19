@@ -68,7 +68,8 @@ int main(int argc, char* argv[]){
     cout << endl;
 
     //Establish a connection with the server
-    //TODO use the streams system for this
+    jstp_connector connector(sender_hostname, sender_portnum);
+    jstp_stream(connector, 0);      //TODO make this lose some packets
 
     //Craft the request message
     outgoing_message request;
