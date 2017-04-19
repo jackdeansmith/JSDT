@@ -36,7 +36,6 @@ class jstp_connector{
 class jstp_acceptor{
     friend class jstp_stream;
     public:
-        //TODO destructor
         jstp_acceptor(uint16_t portno);
     private:
         udp_socket acceptor_socket;
@@ -51,8 +50,8 @@ class jstp_stream{
         static const size_t RETRANSMIT_DELAY = 1;        //Arbitrary TODO set
         
         //Constructed from either an acceptor or a connector, no default.
-        jstp_stream(jstp_acceptor&);
-        jstp_stream(jstp_connector&);
+        jstp_stream(jstp_acceptor&, double loss_probability);
+        jstp_stream(jstp_connector&, double loss_probability);
 
         //Can't be coppied or moved
         jstp_stream(jstp_stream& other) = delete;

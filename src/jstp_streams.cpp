@@ -40,8 +40,8 @@ jstp_acceptor::jstp_acceptor(uint16_t portno):
 }
 
 //Constructor for the jstp_stream on the client side
-jstp_stream::jstp_stream(jstp_connector& connector):
-    stream_sock(jstp_segment::MAX_SEGMENT_SIZE){
+jstp_stream::jstp_stream(jstp_connector& connector, double probability_loss):
+    stream_sock(jstp_segment::MAX_SEGMENT_SIZE, probability_loss){
     
     //Bind the stream socket to any local port
     stream_sock.bind_local_any();
@@ -78,8 +78,8 @@ jstp_stream::jstp_stream(jstp_connector& connector):
 }
 
 //Constructor for JSTP stream on the server side
-jstp_stream::jstp_stream(jstp_acceptor& acceptor):
-    stream_sock(jstp_segment::MAX_SEGMENT_SIZE){
+jstp_stream::jstp_stream(jstp_acceptor& acceptor, double probability_loss):
+    stream_sock(jstp_segment::MAX_SEGMENT_SIZE, probability_loss){
 
     //First, lets wait for a syn segment to come in
     jstp_segment syn_seg; 
@@ -126,30 +126,6 @@ jstp_stream::~jstp_stream(){
     cout << "Both threads exited!" << endl;
 }
 
-void sender(atomic<bool>& running){
-    while(running){
-        //First, load app data
-        load_app_data();
-
-    }
-    //TODO closing protocol
-}
-
-void receiver(atomic<bool>& running){
-    while(running){
-        jstp_segment seg; 
-        stream_sock.recv(seg);      //TODO, needs a timeout
-        if(seg.get_ack_flag()){
-            ack_num = seg.get_ack() + seg.get_length();
-        }
-
-        //Copy the data out to our user
-
-        //TODO deal with the close flag
-    }
-    //TODO closing protocol
-}
-
 //Init function, takes the sequence number and the ack number we should kick
 //things off with
 void jstp_stream::init(uint32_t seq, uint32_t ack){
@@ -163,8 +139,6 @@ void jstp_stream::init(uint32_t seq, uint32_t ack){
 
     //And now for the big show, we start up the threads!
     running = true;
-    sender_thread = thread(sender, std::ref(running));
-    receiver_thread = thread(receiver, std::ref(running));
 }
 
 
