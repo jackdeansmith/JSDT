@@ -63,11 +63,13 @@ class udp_socket{
         //Primary interface, send and receive arbitrary serial data represented
         //as uint8_t vectors.
         void send(const std::vector<uint8_t>&);
-        std::vector<uint8_t> recv();
+        std::vector<uint8_t> recv(bool timeout = false, 
+                                  size_t microseconds = 0);
 
         //Send and receive any sendable object
         void send(serializable&);
-        void recv(serializable&);
+        void recv(serializable&, bool timeout = false, 
+                  size_t microseconds = 0);
 
     private:
 
