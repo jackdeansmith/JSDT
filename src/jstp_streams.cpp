@@ -18,7 +18,11 @@ using std::cout; using std::endl;
 using std::thread;
 #include <atomic>
 using std::atomic;
+#include <vector>
+using std::vector;
 #include <functional>
+#include <algorithm>
+using std::min;
 
 //Function which "Randomly" choses an initial sequence number. For now lets just
 //use 42.
@@ -126,16 +130,23 @@ jstp_stream::~jstp_stream(){
     cout << "Both threads exited!" << endl;
 }
 
-void sender(atomic<bool>& running){
+void jstp_stream::sender(atomic<bool>& running){
     while(running){
         //First, load app data
         load_app_data();
+
+        //Figure out how much data we are allowed to send
+        size_t allowed_to_send;
+
+        size_t count = min(jstp_segment::MAX_PAYLOAD_SIZE, allowed_to_send);
+        jstp_segment seg;
+        vector<uint8_t> payload; 
 
     }
     //TODO closing protocol
 }
 
-void receiver(atomic<bool>& running){
+void jstp_stream::receiver(atomic<bool>& running){
     while(running){
         jstp_segment seg; 
         stream_sock.recv(seg);      //TODO, needs a timeout
@@ -143,7 +154,9 @@ void receiver(atomic<bool>& running){
             ack_num = seg.get_ack() + seg.get_length();
         }
 
-        //Copy the data out to our user
+        //Copy the data out to our user, TODO what if this fails somehow?
+        const vector<uint8_t> v = seg.get_payload();
+        write(sockpair[1], v.data(), v.size());
 
         //TODO deal with the close flag
     }
@@ -161,10 +174,10 @@ void jstp_stream::init(uint32_t seq, uint32_t ack){
     base_seq_num = seq;
     ack_num = ack;
 
-    //And now for the big show, we start up the threads!
+    //Sorry it looks shitty, it starts the threads though.
     running = true;
-    sender_thread = thread(sender, std::ref(running));
-    receiver_thread = thread(receiver, std::ref(running));
+    sender_thread = thread([this](){sender(std::ref(running));});
+    receiver_thread = thread([this](){receiver(std::ref(running));});
 }
 
 
