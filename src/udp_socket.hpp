@@ -62,12 +62,15 @@ class udp_socket{
         const sockaddr_in get_last_addr();
 
         //Primary interface, send and receive arbitrary serial data represented
-        //as uint8_t vectors.
+        //as uint8_t vectors. Recv optionally allows a timeout to be set with a
+        //proveded timeval. If the operation times out, it returns an empty
+        //vector.
         void send(const std::vector<uint8_t>&);
         std::vector<uint8_t> recv(bool timeout = false, 
                                   timeval tv = timeval());
 
-        //Send and receive any sendable object
+        //Send and receive any sendable object. Recv returns false if it times
+        //out, true otherwise.
         void send(serializable&);
         bool recv(serializable&, bool timeout = false, 
                   timeval tv = timeval());

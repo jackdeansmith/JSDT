@@ -193,15 +193,17 @@ vector<uint8_t> udp_socket::recv(bool timeout, timeval tv){
     //do a bit of extra work.
     if(timeout){
 
-        //Create a set of file descriptors we will wath for activity, in this
+        //Create a set of file descriptors we will watch for activity, in this
         //case, just the udp socket
         fd_set readset;
         FD_ZERO(&readset);
         FD_SET(fd, &readset);
 
-        //TODO comment
+        //Wait up to the specified time or untill one of our watched files gets
+        //updated. Return the number of updated files.
         int flag = select(fd + 1, &readset, nullptr, nullptr, &tv);
 
+        //If the flag is 0, that means we waited our whole timeout window.
         if(flag == 0){
             return output; 
         }
