@@ -8,6 +8,8 @@ using std::string;
 #include <vector>
 using std::vector;
 
+#include "jstp_streams.hpp"
+
 //The message has three action types, request, deny, and data. This enum is used
 //to specify which should be/has been used.
 namespace action_type{
@@ -31,7 +33,7 @@ class outgoing_message: public file_message{
         void set_action(const action_type::Enum&);
         void set_filename(const string&);
         void attach_data(istream&);
-        //TODO send
+        void send(jstp_stream&);
 };
 
 //Incoming message type, only allows receiving and getting fields
@@ -40,7 +42,7 @@ class incoming_message: public file_message{
         action_type::Enum get_action();
         string get_filename();
         void extract_data(ostream&);
-        //TODO recv
+        void recv(jstp_stream&);
 };
 
 #endif
