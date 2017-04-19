@@ -64,8 +64,13 @@ void outgoing_message::send(jstp_stream& stream){
     
     //First, get the whole message as a string
     string message = str();
-    stream.send(&message[0], message.size());
-    
+
+    //Then send it
+    size_t num_sent = stream.send(&message[0], message.size());
+
+    if(num_sent != message.size()){
+        //TODO handle this error case 
+    }
 }
 
 //Get the action type of an incoming_message
@@ -83,7 +88,64 @@ void incoming_message::extract_data(ostream& os){
     copy(data.begin(), data.end(), ostream_iterator<unsigned char>(os));
 }
 
-//TODO impl
+//Quick and dirty recv
 void incoming_message::recv(jstp_stream& stream){
+    char c;
 
+    //Get the action string and translate it to an action
+    c = ' ';
+    string action_str;
+    do{
+        size_t read = stream.recv(&c, 1); 
+        if(read){
+            action_str.push_back(c); 
+        }
+
+    } while(c != '\n');
+
+    if(action_str == request_str){
+        action = action_type::REQUEST; 
+    }
+    else if(action_str == deny_str){
+        action = action_type::DENY; 
+    }
+    else if(action_str == data_str){
+        action = action_type::DATA; 
+    }
+    else{
+        //Error condition, TODO handle this 
+    }
+
+    //Get the filename
+    c = ' ';
+    filename.clear();
+    do{
+        size_t read = stream.recv(&c, 1); 
+        if(read){
+            filename.push_back(c); 
+        }
+
+    } while(c != '\n');
+
+    //Get the length and convert it to a number
+    c = ' ';
+    string length_str;
+    do{
+        size_t read = stream.recv(&c, 1); 
+        if(read){
+            action_str.push_back(c); 
+        }
+
+    } while(c != '\n');
+    size_t length = stoi(length_str);
+
+    //Get the data
+    data.clear();
+    while(length > 0){
+        size_t read = stream.recv(&c, 1); 
+        if(read){
+            data.push_back(c); 
+            length--;
+        } 
+    }
 }
