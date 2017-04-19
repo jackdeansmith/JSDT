@@ -127,19 +127,27 @@ jstp_stream::~jstp_stream(){
 }
 
 void sender(atomic<bool>& running){
-    cout << "I'm the sender, I'm starting!" << endl;
     while(running){
-    
+        //First, load app data
+        load_app_data();
+
     }
-    cout << "I'm the sender thread and I just got told to stop" << endl;
+    //TODO closing protocol
 }
 
 void receiver(atomic<bool>& running){
-    cout << "I'm the receiver, I'm starting!" << endl;
     while(running){
-    
+        jstp_segment seg; 
+        stream_sock.recv(seg);      //TODO, needs a timeout
+        if(seg.get_ack_flag()){
+            ack_num = seg.get_ack() + seg.get_length();
+        }
+
+        //Copy the data out to our user
+
+        //TODO deal with the close flag
     }
-    cout << "I'm the receiver thread and I just got told to stop" << endl;
+    //TODO closing protocol
 }
 
 //Init function, takes the sequence number and the ack number we should kick
@@ -147,9 +155,7 @@ void receiver(atomic<bool>& running){
 void jstp_stream::init(uint32_t seq, uint32_t ack){
     //First, lets create the socket pair which we use to interact with the
     //application layer.
-    cout << "Attempting to create a socketpair" << endl;
     socketpair(AF_UNIX, SOCK_STREAM, 0, sockpair);
-    cout << "Socketpair created" << endl;
 
     //Now, lets set the sequence and ack numbers appropriatly
     base_seq_num = seq;

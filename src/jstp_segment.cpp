@@ -107,6 +107,10 @@ void jstp_segment::set_payload(const vector<uint8_t>& in){
     copy(in.begin(), in.end(), back_inserter(payload));
 }
 
+const vector<uint8_t> jstp_segment::get_payload(){
+    return payload;
+}
+
 vector<uint8_t>::const_iterator jstp_segment::payload_begin(){
     return payload.cbegin();
 }

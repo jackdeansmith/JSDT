@@ -10,6 +10,7 @@
 
 //Project specific headers
 #include "udp_socket.hpp"
+#include "jstp_segment.hpp"
 
 //STL includes
 #include <string>
@@ -81,8 +82,9 @@ class jstp_stream{
         void load_app_data();
         uint8_t load_buff[BUFF_CAPACITY];
 
-        //Atomics for the ack and sequence number
-        std::atomic<uint8_t> ack_num;
+        //Atomics for keeping track of variaus states
+        std::atomic<uint32_t> ack_num;
+        std::atomic<uint32_t> other_rwnd;
 
         //Atomic which allows the supervising thread to stop the workers
         std::atomic<bool> running;
