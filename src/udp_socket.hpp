@@ -9,6 +9,9 @@
 #include <vector>
 #include <cstdint>
 #include <netinet/in.h>
+#include <sys/time.h>
+#include <functional>
+#include <random>
 
 // Abstract class representing the concept of serializability. The udp socket is
 // set up to be able to send and receive any object which is serializable given
@@ -35,7 +38,7 @@ class udp_socket{
 
     public:
         //Rule of N stuff
-        udp_socket(size_t mss);
+        udp_socket(size_t mss, double loss_probability = 0);
         udp_socket(udp_socket& other);
         void swap(udp_socket& l, udp_socket& r);
         udp_socket& operator=(udp_socket other);
@@ -61,13 +64,18 @@ class udp_socket{
         const sockaddr_in get_last_addr();
 
         //Primary interface, send and receive arbitrary serial data represented
-        //as uint8_t vectors.
+        //as uint8_t vectors. Recv optionally allows a timeout to be set with a
+        //proveded timeval. If the operation times out, it returns an empty
+        //vector.
         void send(const std::vector<uint8_t>&);
-        std::vector<uint8_t> recv();
+        std::vector<uint8_t> recv(bool timeout = false, 
+                                  timeval tv = timeval());
 
-        //Send and receive any sendable object
+        //Send and receive any sendable object. Recv returns false if it times
+        //out, true otherwise.
         void send(serializable&);
-        void recv(serializable&);
+        bool recv(serializable&, bool timeout = false, 
+                  timeval tv = timeval());
 
     private:
 
@@ -88,4 +96,12 @@ class udp_socket{
         sockaddr_in peer_addr;
         sockaddr_in local_addr;
         sockaddr_in last_recvd_addr;
+
+        //Data members and functions used for simulating packet loss:
+        double loss_probability;
+        std::knuth_b rand_engine;
+
+        //This private member uses the above parameters to return true if we
+        //should drop an incoming packet.
+        bool was_dropped();
 };

@@ -1,5 +1,7 @@
 #include <iostream>
 using std::cout; using std::cerr; using std::endl;
+#include <fstream>
+using std::ofstream;
 #include <string>
 using std::string; using std::stoi;
 //INSERT POINT
@@ -65,9 +67,59 @@ int main(int argc, char* argv[]){
     cout << "    Filename       : " << filename << endl;
     cout << endl;
 
-    //Create a connector and try to use it to construct a stream
-    jstp_connector connector(sender_hostname, sender_portnum);
-    jstp_stream stream(connector);
+    //Establish a connection with the server
+    //TODO use the streams system for this
+
+    //Craft the request message
+    outgoing_message request;
+    request.set_action(action_type::REQUEST);
+    request.set_filename(filename);
+
+    //Send the request message over the stream
+    //TODO
+
+    //Get a response message back TODO
+    incoming_message response;
+
+    //If the response is a DENY message
+    if(response.get_action() == action_type::DENY){
+        //Then print an error and exit.
+        cout << "Sorry, the server said it didn't have that file available."
+             << endl; 
+        cout << "Exiting." << endl;
+        return 1;
+    }
+
+    //If that wasn't the case but they also aren't sending data...
+    else if(response.get_action() != action_type::DATA){
+        //...I (the programmer) did something wrong. 
+        cerr << "Hey there buddy, this shoudn't happen!" << endl;
+        return 1;
+    }
+
+    //Now we know that they sent us the file we wanted. 
+    //Lets open a file on our system so we can save it. Open it in trunc mode to
+    //discard the file's current contents if it already exists.
+    ofstream ofs;
+    ofs.open(filename, std::ios::trunc);
+
+    //If the file failed to open...
+    if(!ofs.is_open()){
+        //Print an error message and exit
+        cerr << "Error: Data was received from the server but no local file "
+                "could be opened to save the data. Check the permissions of "
+                "any existing files of the same name and try again." << endl; 
+        return 1;
+    }
+
+    //Alright, we now have an open file. All we have to do is extract our data
+    //into it and then close.
+    response.extract_data(ofs);
+    ofs.close();
+
+    //We are done! print a message telling the user.
+    cout << "The file was sucessfully received and was written "
+            "to the filesystem. Exiting." << endl;
 
     return 0;
 };

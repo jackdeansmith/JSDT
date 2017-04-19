@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <cstring>
 
@@ -21,7 +22,10 @@ using std::back_inserter;
 using std::swap;
 
 //Construct a socket with support for segments of up to mss in size.
-udp_socket::udp_socket(size_t mss){
+udp_socket::udp_socket(size_t mss, double p): loss_probability(p){
+
+    //Seed the random number generator with the time of day
+    rand_engine.seed(time(nullptr));
 
     //Set the max segment size
     max_segment_size = mss;
@@ -174,11 +178,36 @@ void udp_socket::send(const vector<uint8_t>& v){
 
 //Receive up to mss bytes from the network, currently discards information about
 //where this packet came from.
-vector<uint8_t> udp_socket::recv(){
+vector<uint8_t> udp_socket::recv(bool timeout, timeval tv){
     //If the socket isn't bound...
     if(!bound){
         //... then we clearly shoudln't be allowed to receive anything.
         //TODO throw exception. 
+    }
+
+    //First, create an output vector, leave it empty for now.
+    vector<uint8_t> output;
+
+    //If the user requested that we do our processing with a timout, we need to
+    //do a bit of extra work.
+    if(timeout){
+
+        //Create a set of file descriptors we will watch for activity, in this
+        //case, just the udp socket
+        fd_set readset;
+        FD_ZERO(&readset);
+        FD_SET(fd, &readset);
+
+        //Wait up to the specified time or untill one of our watched files gets
+        //updated. Return the number of updated files.
+        int flag = select(fd + 1, &readset, nullptr, nullptr, &tv);
+
+        //If the flag is 0, that means we waited our whole timeout window.
+        if(flag == 0){
+            return output; 
+        }
+        //Otherwise, we're good to go. The recvfrom below is guarenteed not to
+        //block.
     }
 
     //Make a call to recv from, place the address of the person we received from
@@ -187,12 +216,15 @@ vector<uint8_t> udp_socket::recv(){
     size_t count = recvfrom(fd, recv_buffer, max_segment_size, 0, 
             (struct sockaddr *) &last_recvd_addr, (socklen_t *)&len);
 
-    //Create an output vector and reserve space for all the data we just got
-    vector<uint8_t> output;
-    output.reserve(count);
+    //If the loss simulation parameters tell us that the packet wasn't dropped
+    if(!was_dropped()){
 
-    //Copy the data to the output vector and then return it
-    copy(recv_buffer, recv_buffer + count, back_inserter(output));
+        //... then reserve space in the output vector and copy the data before
+        //returning it.
+        output.reserve(count);
+        copy(recv_buffer, recv_buffer + count, back_inserter(output));
+    }
+
     return output;
 }
 
@@ -202,6 +234,21 @@ void udp_socket::send(serializable& obj){
 }
 
 //Recv a serializable object
-void udp_socket::recv(serializable& obj){
-    obj.deserialize(recv());
+bool udp_socket::recv(serializable& obj, bool timeout, timeval tv){
+    vector<uint8_t> recvd = recv(timeout, tv);
+    if(recvd.size() == 0){
+        return false; 
+    }
+    else{
+        obj.deserialize(recvd);
+        return true;
+    }
+}
+
+//Returns true if we should intentionally drop a packet
+bool udp_socket::was_dropped(){
+    //Create a bernouli distribution and use it to determine if we should
+    //drop the packet or not.
+    std::bernoulli_distribution dist(loss_probability);
+    return dist(rand_engine);
 }
