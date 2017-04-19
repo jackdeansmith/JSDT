@@ -21,12 +21,11 @@ using std::back_inserter;
 #include <utility>
 using std::swap;
 
-//For debug only TODO remove
-#include <iostream>
-using std::cout; using std::endl;
-
 //Construct a socket with support for segments of up to mss in size.
-udp_socket::udp_socket(size_t mss){
+udp_socket::udp_socket(size_t mss, double p): loss_probability(p){
+
+    //Seed the random number generator with the time of day
+    rand_engine.seed(time(nullptr));
 
     //Set the max segment size
     max_segment_size = mss;
@@ -217,11 +216,15 @@ vector<uint8_t> udp_socket::recv(bool timeout, timeval tv){
     size_t count = recvfrom(fd, recv_buffer, max_segment_size, 0, 
             (struct sockaddr *) &last_recvd_addr, (socklen_t *)&len);
 
-    //Create an output vector and reserve space for all the data we just got
-    output.reserve(count);
+    //If the loss simulation parameters tell us that the packet wasn't dropped
+    if(!was_dropped()){
 
-    //Copy the data to the output vector and then return it
-    copy(recv_buffer, recv_buffer + count, back_inserter(output));
+        //... then reserve space in the output vector and copy the data before
+        //returning it.
+        output.reserve(count);
+        copy(recv_buffer, recv_buffer + count, back_inserter(output));
+    }
+
     return output;
 }
 
@@ -240,4 +243,12 @@ bool udp_socket::recv(serializable& obj, bool timeout, timeval tv){
         obj.deserialize(recvd);
         return true;
     }
+}
+
+//Returns true if we should intentionally drop a packet
+bool udp_socket::was_dropped(){
+    //Create a bernouli distribution and use it to determine if we should
+    //drop the packet or not.
+    std::bernoulli_distribution dist(loss_probability);
+    return dist(rand_engine);
 }

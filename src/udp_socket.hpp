@@ -10,6 +10,8 @@
 #include <cstdint>
 #include <netinet/in.h>
 #include <sys/time.h>
+#include <functional>
+#include <random>
 
 // Abstract class representing the concept of serializability. The udp socket is
 // set up to be able to send and receive any object which is serializable given
@@ -36,7 +38,7 @@ class udp_socket{
 
     public:
         //Rule of N stuff
-        udp_socket(size_t mss);
+        udp_socket(size_t mss, double loss_probability = 0);
         udp_socket(udp_socket& other);
         void swap(udp_socket& l, udp_socket& r);
         udp_socket& operator=(udp_socket other);
@@ -94,4 +96,12 @@ class udp_socket{
         sockaddr_in peer_addr;
         sockaddr_in local_addr;
         sockaddr_in last_recvd_addr;
+
+        //Data members and functions used for simulating packet loss:
+        double loss_probability = 1;
+        std::knuth_b rand_engine;
+
+        //This private member uses the above parameters to return true if we
+        //should drop an incoming packet.
+        bool was_dropped();
 };
