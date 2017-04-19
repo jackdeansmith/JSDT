@@ -59,6 +59,11 @@ void outgoing_message::attach_data(istream& is){
     data.pop_back();
 }
 
+//TODO impliment
+void outgoing_message::send(jstp_stream& stream){
+
+}
+
 //Get the action type of an incoming_message
 action_type::Enum incoming_message::get_action(){
     return action;
@@ -72,4 +77,9 @@ string incoming_message::get_filename(){
 //Extract the data from an incoming_message
 void incoming_message::extract_data(ostream& os){
     copy(data.begin(), data.end(), ostream_iterator<unsigned char>(os));
+}
+
+//TODO impl
+void incoming_message::recv(jstp_stream& stream){
+
 }
