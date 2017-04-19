@@ -50,13 +50,12 @@ jstp_stream::jstp_stream(jstp_connector& connector):
     stream_sock.set_peer(connector.hostname, connector.port);
 
     //Now we chose an initial sequence number
-    uint32_t initial_sequence_number = chose_isn();
-    //TODO assign internal variables as needed
+    uint32_t our_isn = chose_isn();
 
     //Now we need to send a syn segment and send it
     jstp_segment syn_seg;
     syn_seg.set_syn_flag();
-    syn_seg.set_sequence(initial_sequence_number);
+    syn_seg.set_sequence(our_isn);
     stream_sock.send(syn_seg);
 
     //Nice! We need to receive a synack now. TODO add timeout to udp socket recv
@@ -69,13 +68,13 @@ jstp_stream::jstp_stream(jstp_connector& connector):
     sockaddr_in server_stream_addr = stream_sock.get_last_addr();
     stream_sock.set_peer(server_stream_addr);
 
-    //Now that segment should contain the servers initial sequence number, lets
-    //grab it TODO do something with it
-    cout << "Server ISN: " << synack_seg.get_sequence() << endl;
+    //The synack should contain the servers initial sequence number
+    uint32_t server_isn = synack_seg.get_sequence();
 
-    //We should be good now. 
-    //TODO change to the actual vlaues
-    init(0,0);
+    //Now use init to start the threads, because we already burned out isn on
+    //the syn packet, incriment our sequence by one. Similarly for the server
+    //ack number because we ack the next byte we expect.
+    init(our_isn + 1, server_isn + 1);
 }
 
 //Constructor for JSTP stream on the server side
@@ -89,16 +88,13 @@ jstp_stream::jstp_stream(jstp_acceptor& acceptor):
     }
 
     //Now that we got a syn segment, we know the clients isn
-    //TODO set internal state based on this
     uint32_t other_isn = syn_seg.get_sequence();
-    cout << "Received a syn, the ISN is: " << syn_seg.get_sequence() << endl;
 
     //Now we can bind our socket and set our peer
     stream_sock.bind_local_any();
     stream_sock.set_peer(acceptor.acceptor_socket.get_last_addr());
 
     //Time to chose our own initial sequence numebr
-    //TODO update internal state
     uint32_t our_isn = chose_isn();
 
     //We now need to craft a synack to send back
@@ -113,8 +109,8 @@ jstp_stream::jstp_stream(jstp_acceptor& acceptor):
 
     //TODO wait for a normal ack?
 
-    //TODO change to the actual vlaues
-    init(0,0);
+    //Start the threads, similarly to the above constructor.
+    init(our_isn + 1, other_isn + 1);
 }
 
 //Destructor
