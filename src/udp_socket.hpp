@@ -98,7 +98,7 @@ class udp_socket{
         sockaddr_in last_recvd_addr;
 
         //Data members and functions used for simulating packet loss:
-        double loss_probability = 1;
+        double loss_probability;
         std::knuth_b rand_engine;
 
         //This private member uses the above parameters to return true if we
