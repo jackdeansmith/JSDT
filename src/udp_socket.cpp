@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <cstring>
 
@@ -19,6 +20,10 @@ using std::copy;
 using std::back_inserter;
 #include <utility>
 using std::swap;
+
+//For debug only TODO remove
+#include <iostream>
+using std::cout; using std::endl;
 
 //Construct a socket with support for segments of up to mss in size.
 udp_socket::udp_socket(size_t mss){
@@ -174,11 +179,34 @@ void udp_socket::send(const vector<uint8_t>& v){
 
 //Receive up to mss bytes from the network, currently discards information about
 //where this packet came from.
-vector<uint8_t> udp_socket::recv(){
+vector<uint8_t> udp_socket::recv(bool timeout, timeval tv){
     //If the socket isn't bound...
     if(!bound){
         //... then we clearly shoudln't be allowed to receive anything.
         //TODO throw exception. 
+    }
+
+    //First, create an output vector, leave it empty for now.
+    vector<uint8_t> output;
+
+    //If the user requested that we do our processing with a timout, we need to
+    //do a bit of extra work.
+    if(timeout){
+
+        //Create a set of file descriptors we will wath for activity, in this
+        //case, just the udp socket
+        fd_set readset;
+        FD_ZERO(&readset);
+        FD_SET(fd, &readset);
+
+        //TODO comment
+        int flag = select(fd + 1, &readset, nullptr, nullptr, &tv);
+
+        if(flag == 0){
+            return output; 
+        }
+        //Otherwise, we're good to go. The recvfrom below is guarenteed not to
+        //block.
     }
 
     //Make a call to recv from, place the address of the person we received from
@@ -188,7 +216,6 @@ vector<uint8_t> udp_socket::recv(){
             (struct sockaddr *) &last_recvd_addr, (socklen_t *)&len);
 
     //Create an output vector and reserve space for all the data we just got
-    vector<uint8_t> output;
     output.reserve(count);
 
     //Copy the data to the output vector and then return it
@@ -202,6 +229,13 @@ void udp_socket::send(serializable& obj){
 }
 
 //Recv a serializable object
-void udp_socket::recv(serializable& obj){
-    obj.deserialize(recv());
+bool udp_socket::recv(serializable& obj, bool timeout, timeval tv){
+    vector<uint8_t> recvd = recv(timeout, tv);
+    if(recvd.size() == 0){
+        return false; 
+    }
+    else{
+        obj.deserialize(recvd);
+        return true;
+    }
 }

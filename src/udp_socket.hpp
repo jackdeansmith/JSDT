@@ -9,6 +9,7 @@
 #include <vector>
 #include <cstdint>
 #include <netinet/in.h>
+#include <sys/time.h>
 
 // Abstract class representing the concept of serializability. The udp socket is
 // set up to be able to send and receive any object which is serializable given
@@ -64,12 +65,12 @@ class udp_socket{
         //as uint8_t vectors.
         void send(const std::vector<uint8_t>&);
         std::vector<uint8_t> recv(bool timeout = false, 
-                                  size_t microseconds = 0);
+                                  timeval tv = timeval());
 
         //Send and receive any sendable object
         void send(serializable&);
-        void recv(serializable&, bool timeout = false, 
-                  size_t microseconds = 0);
+        bool recv(serializable&, bool timeout = false, 
+                  timeval tv = timeval());
 
     private:
 
