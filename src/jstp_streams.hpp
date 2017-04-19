@@ -8,6 +8,8 @@
  * construct other streams.
  */
 
+#pragma once
+
 //Project specific headers
 #include "udp_socket.hpp"
 #include "jstp_segment.hpp"
