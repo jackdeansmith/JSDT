@@ -21,9 +21,16 @@ class file_message{
         string str();       //Obtain a string representation of the messsage
 
     protected:
+
+        //Data which fully defines the message
         action_type::Enum action;
         string filename;
         vector<unsigned char> data;
+
+        //The strings which specify the action type
+        const string request_str = "REQUEST";
+        const string deny_str = "DENY";
+        const string data_str = "DATA";
 };
 
 //Outgoing message type, only allows modification of fields and sending

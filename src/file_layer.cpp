@@ -11,12 +11,6 @@ using std::ostream_iterator;
 #include <sstream>
 using std::ostringstream;
 
-//Strings used for the first header field, these might be better in the header
-//file, TODO determine if this should be impl defined
-static const string request_str = "REQUEST";
-static const string deny_str = "DENY";
-static const string data_str = "DATA";
-
 //Get a string representation of the message, this might be used later for the
 //send function if I'm feeling particularly lazy.
 string file_message::str(){
