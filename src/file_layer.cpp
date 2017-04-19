@@ -59,9 +59,13 @@ void outgoing_message::attach_data(istream& is){
     data.pop_back();
 }
 
-//TODO impliment
+//Quick and dirty send, TODO make it copy free?
 void outgoing_message::send(jstp_stream& stream){
-
+    
+    //First, get the whole message as a string
+    string message = str();
+    stream.send(&message[0], message.size());
+    
 }
 
 //Get the action type of an incoming_message

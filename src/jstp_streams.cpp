@@ -130,6 +130,15 @@ jstp_stream::~jstp_stream(){
     cout << "Both threads exited!" << endl;
 }
 
+//TODO impl these
+size_t jstp_stream::send(void* buffer, size_t len){
+
+}
+
+size_t jstp_stream::recv(void* buffer, size_t len){
+
+}
+
 void jstp_stream::sender(atomic<bool>& running){
     while(running){
         //First, load app data
