@@ -87,6 +87,7 @@ int main(int argc, char* argv[]){
         deny.set_action(action_type::DENY);
         deny.set_filename(req.get_filename());
         deny.send(stream);
+        return 1;
     }
 
     //Otherwise, we have a good file to send
