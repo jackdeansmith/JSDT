@@ -102,6 +102,8 @@ int main(int argc, char* argv[]){
     data_msg.set_filename(req.get_filename());
     data_msg.attach_data(ifs);
     cout << "    ... response crafted!" << endl;
+    cout << "This is the response: " << endl;
+    cout << data_msg.str() << endl;
 
     cout << "Attempting to reply..." << endl;
     data_msg.send(stream);

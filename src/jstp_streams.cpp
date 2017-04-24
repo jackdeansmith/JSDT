@@ -135,7 +135,8 @@ void jstp_stream::init(uint32_t init_seq, uint32_t init_ack){
     other_rwnd = BUFF_CAPACITY;
     
     //Start the threads, make sure this is the last thing init does
-    threads_running = true;
+    connected = true;
+    closing = false;
     sender_thread = thread(&jstp_stream::sender_main, this);
     receiver_thread = thread(&jstp_stream::receiver_main, this);
 }
@@ -143,11 +144,10 @@ void jstp_stream::init(uint32_t init_seq, uint32_t init_ack){
 //Destructor
 jstp_stream::~jstp_stream(){
     //First set the thread running variable to false
-    //TODO this is a hack, get rid of it
-    /* timespec t; */
-    /* t.tv_sec = 5; */
-    /* nanosleep(&t, nullptr); */
-    threads_running = false;
+    send_buffer_mutex.lock();
+    connected = false;
+    closing = true;
+    send_buffer_mutex.unlock();
 
     //The receiver has it's own timeout loop, but the sender will need to be
     //notified. This will cause it to execute another loop of it's programming
@@ -162,7 +162,7 @@ jstp_stream::~jstp_stream(){
 //Sender thread main function
 void jstp_stream::sender_main(){
     //Sender only runs while the threads are running, obviously
-    while(threads_running){
+    while(connected || closing){
 
         //The first thing we do is wait for someone to notify us that we have a
         //job to do.
@@ -229,6 +229,10 @@ void jstp_stream::sender_main(){
                 break; 
             }
 
+            if(closing && send_buffer.size() == 0){
+                return; 
+            }
+
             send_buffer_mutex.unlock();
         }
     }
@@ -237,7 +241,7 @@ void jstp_stream::sender_main(){
 //Receiver thread main function
 void jstp_stream::receiver_main(){
     //Receiver only runs while the threads are running, duh
-    while(threads_running){
+    while(connected){
 
         //First thing we do is try to get a segment out of the socket, we only
         //wait at most one timout interval because we probably have other things
@@ -292,9 +296,7 @@ void jstp_stream::receiver_main(){
                     //We also need to update the send buffer to get rid of the
                     //old data
                     send_buffer_mutex.lock();
-                    cout << "Clearing old data" << endl;
                     size_t diff = incoming_seg.get_ack() - sender_base_sequence;
-                    cout << "Found " << diff << " Bytes to clear" << endl;
                     sender_base_sequence += diff;
                     offset -= diff;
                     send_buffer.erase(send_buffer.begin(), 

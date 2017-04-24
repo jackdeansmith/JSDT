@@ -72,7 +72,8 @@ class jstp_stream{
         udp_socket stream_sock;
 
         //Data which must be available to everyone
-        std::atomic<bool> threads_running;
+        std::atomic<bool> connected;
+        std::atomic<bool> closing;
         std::atomic<uint32_t> self_ack_number;
         std::atomic<uint32_t> self_sequence_number;
         std::atomic<uint32_t> self_rwnd;
