@@ -62,8 +62,8 @@ class jstp_stream{
         ~jstp_stream();
 
         //Interface to the streams, looks a lot like TCP for a reason
-        size_t send(void* buffer, size_t length);
-        size_t recv(void* buffer, size_t length);
+        size_t send(const std::vector<uint8_t>&);
+        std::vector<uint8_t> recv();
 
     private:
         //Called by the constructors to do things like start threads, allocate
