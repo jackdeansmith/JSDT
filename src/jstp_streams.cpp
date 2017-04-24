@@ -82,7 +82,6 @@ jstp_stream::jstp_stream(jstp_connector& connector, double probability_loss):
     //Now use init to start the threads, because we already burned out isn on
     //the syn packet, incriment our sequence by one. Similarly for the server
     //ack number because we ack the next byte we expect.
-    init(our_isn + 1, server_isn + 1);
 }
 
 //Constructor for JSTP stream on the server side
@@ -117,129 +116,8 @@ jstp_stream::jstp_stream(jstp_acceptor& acceptor, double probability_loss):
 
     //TODO wait for a normal ack?
 
-    //Start the threads, similarly to the above constructor.
-    init(our_isn + 1, other_isn + 1);
 }
 
-//Destructor
+//Destructor TODO
 jstp_stream::~jstp_stream(){
-    cout << "Set running to false!" << endl;
-    //Stop the running variable, this will cause each of the worker threads to
-    //do their own cleanup and then return.
-    threads_running = false;
-
-    //Join both the thread
-    sender_thread.join();
-    receiver_thread.join();
-    loader_thread.join();
-    cout << "Worker threads exited!" << endl;
-}
-
-//Put user data into the sock pair to be sent
-size_t jstp_stream::send(void* buffer, size_t len){
-    return write(sockpair[0], buffer, len);    
-}
-
-//Take user data out of the sock pair
-size_t jstp_stream::recv(void* buffer, size_t len){ 
-    return read(sockpair[0], buffer, len);
-}
-
-void jstp_stream::sender(){
-    while(threads_running){
-        //First, load app data
-        cout << "Sender thread at top of loop" << endl;
-
-        //Figure out how much data we are allowed to send
-        size_t allowed_to_send;
-
-        /* size_t count = min(jstp_segment::MAX_PAYLOAD_SIZE, allowed_to_send); */
-        jstp_segment seg;
-        vector<uint8_t> payload; 
-
-    }
-    //TODO closing protocol
-}
-
-void jstp_stream::receiver(){
-    while(threads_running){
-        jstp_segment seg; 
-        stream_sock.recv(seg);      //TODO, needs a timeout
-        if(seg.get_ack_flag()){
-            ack_num = seg.get_ack() + seg.get_length();
-        }
-
-        //Copy the data out to our user, TODO what if this fails somehow?
-        const vector<uint8_t> v = seg.get_payload();
-        write(sockpair[1], v.data(), v.size());
-
-        //TODO deal with the close flag
-    }
-    //TODO closing protocol
-}
-
-//Thread which simply loads data into the send buffer as is appropriate
-void jstp_stream::loader(){
-    while(threads_running){
-
-        //First, we wait around for a while to see if there is some data for us
-        //to send. Every .5 sec we timeout so that the thread can exit if we
-        //need it to.
-        timeval tv;
-        tv.tv_sec = 0;
-        tv.tv_usec = 500000;
-        fd_set readset;
-        FD_ZERO(&readset);
-        FD_SET(sockpair[1], &readset);
-        int flag = select(sockpair[1] + 1, &readset, nullptr, nullptr, &tv);
-
-        //If flag is 0, we waited our whole timeout and nothing happened, that
-        //means we just try again.
-        if(flag == 0){
-            continue;        
-        }
-
-        //Once we get to this point, we know that we have data that needs to be
-        //sent.
-        cout << "loader thread: I found some data to put in the buffer" << endl;
-    
-        //Get exclusive access to the send buffer
-        send_buffer_mutex.lock();
-
-        //Figure out how much more we can cram in the send buffer
-        size_t available = BUFF_CAPACITY - send_buff.size();
-
-        //Try to read that much into the load buffer
-        int num_read = read(sockpair[1], load_buff, available);
-        cout << "Loaded " << num_read << " bytes of data." << endl;
-
-        //Copy the data we read (if any) into the send buffer deque
-        copy(load_buff, load_buff + num_read, back_inserter(send_buff));
-
-        //Now let other people use the send buffer
-        send_buffer_mutex.unlock();
-    }
-    return;
-}
-
-//Init function, takes the sequence number and the ack number we should kick
-//things off with
-void jstp_stream::init(uint32_t seq, uint32_t ack){
-    //First, lets create the socket pair which we use to interact with the
-    //application layer.
-    socketpair(AF_UNIX, SOCK_STREAM, 0, sockpair);
-
-    //Put them in non-blocking mode, this is very convinient
-    /* fcntl(sockpair[0], F_SETFL, fcntl(sockpair[0], F_GETFL, 0) | O_NONBLOCK); */
-    /* fcntl(sockpair[1], F_SETFL, fcntl(sockpair[1], F_GETFL, 0) | O_NONBLOCK); */
-
-    //Now, lets set the sequence and ack numbers appropriatly
-    base_seq_num = seq;
-    ack_num = ack;
-
-    //Sorry it looks shitty, it starts the threads though.
-    threads_running = true;
-    sender_thread = thread([this] {sender();});
-    receiver_thread = thread([this] {receiver();});
-    loader_thread = thread([this] {loader();});
 }

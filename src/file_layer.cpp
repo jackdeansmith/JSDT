@@ -65,12 +65,14 @@ void outgoing_message::send(jstp_stream& stream){
     //First, get the whole message as a string
     string message = str();
 
-    //Then send it
-    size_t num_sent = stream.send(&message[0], message.size());
+    //Quick and dirty, copy the chars to a vector of uint8
+    vector<uint8_t> v;
+    v.reserve(message.size());
 
-    if(num_sent != message.size()){
-        //TODO handle this error case 
-    }
+    copy(message.begin(), message.end(), back_inserter(v));
+
+    stream.send(v);
+
 }
 
 //Get the action type of an incoming_message
@@ -90,62 +92,62 @@ void incoming_message::extract_data(ostream& os){
 
 //Quick and dirty recv
 void incoming_message::recv(jstp_stream& stream){
-    char c;
+    /* char c; */
 
-    //Get the action string and translate it to an action
-    c = ' ';
-    string action_str;
-    do{
-        size_t read = stream.recv(&c, 1); 
-        if(read){
-            action_str.push_back(c); 
-        }
+    /* //Get the action string and translate it to an action */
+    /* c = ' '; */
+    /* string action_str; */
+    /* do{ */
+    /*     size_t read = stream.recv(&c, 1); */ 
+    /*     if(read){ */
+    /*         action_str.push_back(c); */ 
+    /*     } */
 
-    } while(c != '\n');
+    /* } while(c != '\n'); */
 
-    if(action_str == request_str){
-        action = action_type::REQUEST; 
-    }
-    else if(action_str == deny_str){
-        action = action_type::DENY; 
-    }
-    else if(action_str == data_str){
-        action = action_type::DATA; 
-    }
-    else{
-        //Error condition, TODO handle this 
-    }
+    /* if(action_str == request_str){ */
+    /*     action = action_type::REQUEST; */ 
+    /* } */
+    /* else if(action_str == deny_str){ */
+    /*     action = action_type::DENY; */ 
+    /* } */
+    /* else if(action_str == data_str){ */
+    /*     action = action_type::DATA; */ 
+    /* } */
+    /* else{ */
+    /*     //Error condition, TODO handle this */ 
+    /* } */
 
-    //Get the filename
-    c = ' ';
-    filename.clear();
-    do{
-        size_t read = stream.recv(&c, 1); 
-        if(read){
-            filename.push_back(c); 
-        }
+    /* //Get the filename */
+    /* c = ' '; */
+    /* filename.clear(); */
+    /* do{ */
+    /*     size_t read = stream.recv(&c, 1); */ 
+    /*     if(read){ */
+    /*         filename.push_back(c); */ 
+    /*     } */
 
-    } while(c != '\n');
+    /* } while(c != '\n'); */
 
-    //Get the length and convert it to a number
-    c = ' ';
-    string length_str;
-    do{
-        size_t read = stream.recv(&c, 1); 
-        if(read){
-            action_str.push_back(c); 
-        }
+    /* //Get the length and convert it to a number */
+    /* c = ' '; */
+    /* string length_str; */
+    /* do{ */
+    /*     size_t read = stream.recv(&c, 1); */ 
+    /*     if(read){ */
+    /*         action_str.push_back(c); */ 
+    /*     } */
 
-    } while(c != '\n');
-    size_t length = stoi(length_str);
+    /* } while(c != '\n'); */
+    /* size_t length = stoi(length_str); */
 
-    //Get the data
-    data.clear();
-    while(length > 0){
-        size_t read = stream.recv(&c, 1); 
-        if(read){
-            data.push_back(c); 
-            length--;
-        } 
-    }
+    /* //Get the data */
+    /* data.clear(); */
+    /* while(length > 0){ */
+    /*     size_t read = stream.recv(&c, 1); */ 
+    /*     if(read){ */
+    /*         data.push_back(c); */ 
+    /*         length--; */
+    /*     } */ 
+    /* } */
 }

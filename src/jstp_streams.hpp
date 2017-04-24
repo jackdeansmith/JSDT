@@ -66,39 +66,21 @@ class jstp_stream{
         std::vector<uint8_t> recv();
 
     private:
-        //Called by the constructors to do things like start threads, allocate
-        //space for buffers etc... This work is shared no matter if we are
-        //initiating the connection or accepting it.
-        void init(uint32_t seq, uint32_t ack);
-
-        //The udp socket used to communicate with the network and the socket
-        //pair used to communicate with the application layer. We will by
-        //convention use sockpair[0] for the application side and
-        //sockpair[1] for the transport side
+        //The socket which we will use to communicate with our peer
         udp_socket stream_sock;
-        int sockpair[2];
 
-        //Helper function which loads data from the socket pair into the send
-        //buffer. Needs some buffer area for its own use
-        uint8_t load_buff[BUFF_CAPACITY];
+        //Data which must be available to everyone
+        std::atomic<uint32_t> expected_sequence_number;
+        std::atomic<bool> force_send;
 
-        //Atomics for keeping track of variaus states
-        std::atomic<uint32_t> ack_num;
-        std::atomic<uint32_t> other_rwnd;
-
-        //The send buffer variables, should only be acessed by one thread at a
-        //time.
-        std::atomic<bool> has_sendable_data;
+        //The send buffer and associated things
         std::mutex send_buffer_mutex;
-        std::deque<uint8_t> send_buff;
-        uint32_t base_seq_num;
-        uint32_t next_send_index;
+        std::deque<uint8_t> send_buffer;
+        uint32_t sender_base_sequence;
+        size_t offset;
 
-        //The worker threads, also the static functions which they operate with
-        std::thread sender_thread;
-        std::thread receiver_thread;
-        std::thread loader_thread;
-        void sender();
-        void receiver();
-        void loader();
+        //The receiver buffer and assiciated things
+        std::mutex recv_buffer_mutex;
+        std::deque<uint8_t> recv_buffer;
+
 };
