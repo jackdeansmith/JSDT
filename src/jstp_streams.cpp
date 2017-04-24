@@ -43,6 +43,10 @@ jstp_acceptor::jstp_acceptor(uint16_t portno):
     acceptor_socket.bind_local(portno);
 }
 
+//The JSTP stream is obviously a multithreaded component, these globals are
+//needed in order to manage the state of these threads.
+bool threads_running;
+
 //Constructor for the jstp_stream on the client side
 jstp_stream::jstp_stream(jstp_connector& connector, double probability_loss):
     stream_sock(jstp_segment::MAX_SEGMENT_SIZE, probability_loss){
@@ -122,7 +126,7 @@ jstp_stream::~jstp_stream(){
     cout << "Set running to false!" << endl;
     //Stop the running variable, this will cause each of the worker threads to
     //do their own cleanup and then return.
-    running = false;
+    threads_running = false;
 
     //Join both the thread
     sender_thread.join();
@@ -141,8 +145,8 @@ size_t jstp_stream::recv(void* buffer, size_t len){
     return read(sockpair[0], buffer, len);
 }
 
-void jstp_stream::sender(atomic<bool>& running){
-    while(running){
+void jstp_stream::sender(){
+    while(threads_running){
         //First, load app data
         cout << "Sender thread at top of loop" << endl;
 
@@ -157,8 +161,8 @@ void jstp_stream::sender(atomic<bool>& running){
     //TODO closing protocol
 }
 
-void jstp_stream::receiver(atomic<bool>& running){
-    while(running){
+void jstp_stream::receiver(){
+    while(threads_running){
         jstp_segment seg; 
         stream_sock.recv(seg);      //TODO, needs a timeout
         if(seg.get_ack_flag()){
@@ -175,8 +179,8 @@ void jstp_stream::receiver(atomic<bool>& running){
 }
 
 //Thread which simply loads data into the send buffer as is appropriate
-void jstp_stream::loader(std::atomic<bool>& running){
-    while(running){
+void jstp_stream::loader(){
+    while(threads_running){
 
         //First, we wait around for a while to see if there is some data for us
         //to send. Every .5 sec we timeout so that the thread can exit if we
@@ -234,8 +238,8 @@ void jstp_stream::init(uint32_t seq, uint32_t ack){
     ack_num = ack;
 
     //Sorry it looks shitty, it starts the threads though.
-    running = true;
-    sender_thread = thread([this](){sender(std::ref(running));});
-    receiver_thread = thread([this](){receiver(std::ref(running));});
-    loader_thread = thread([this](){loader(std::ref(running));});
+    threads_running = true;
+    sender_thread = thread([this] {sender();});
+    receiver_thread = thread([this] {receiver();});
+    loader_thread = thread([this] {loader();});
 }

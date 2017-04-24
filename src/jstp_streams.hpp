@@ -86,21 +86,19 @@ class jstp_stream{
         std::atomic<uint32_t> ack_num;
         std::atomic<uint32_t> other_rwnd;
 
-        //Atomic which allows the supervising thread to stop the workers
-        std::atomic<bool> running;
-
         //The send buffer variables, should only be acessed by one thread at a
         //time.
+        std::atomic<bool> has_sendable_data;
         std::mutex send_buffer_mutex;
         std::deque<uint8_t> send_buff;
         uint32_t base_seq_num;
         uint32_t next_send_index;
 
-        //The two threads which run to make our data transfer happen
+        //The worker threads, also the static functions which they operate with
         std::thread sender_thread;
         std::thread receiver_thread;
         std::thread loader_thread;
-        void sender(std::atomic<bool>& running);
-        void receiver(std::atomic<bool>& running);
-        void loader(std::atomic<bool>& running);
+        void sender();
+        void receiver();
+        void loader();
 };
