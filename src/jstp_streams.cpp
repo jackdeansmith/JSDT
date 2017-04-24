@@ -149,11 +149,14 @@ jstp_stream::~jstp_stream(){
 void jstp_stream::sender_main(){
     //Sender only runs while the threads are running, obviously
     while(threads_running){
-        cout << "Getting a lock" << endl;
+
+        //The first thing we do is wait for someone to notify us that we have a
+        //job to do.
         unique_lock<mutex> l(sender_notify_lock);
-        cout << "Waiting on cond var" << endl;
         sender_condition_var.wait(l);
-        cout << "Done waiting on cond var" << endl;
+
+        //Now we need to figure out if we have any data to send, to do this we
+        //need exclusive acess to the send buffer.
     
     }
 }
@@ -162,6 +165,20 @@ void jstp_stream::sender_main(){
 void jstp_stream::receiver_main(){
     //Receiver only runs while the threads are running, duh
     while(threads_running){
+
+        //First thing we do is try to get a segment out of the socket, we only
+        //wait at most one timout interval because we probably have other things
+        //to do at that point even if we don't get a segment.
+        jstp_segment incoming_seg;
+        timeval tv;
+        tv.tv_sec = TIMEOUT_SECONDS;
+        tv.tv_usec = TIMEOUT_USECS;
+        bool got_something = stream_sock.recv(incoming_seg, true, tv);
+
+        //Now we need to do some stuff if we did indeed get something
+        if(got_something){
+        
+        }
     
     }
 }
