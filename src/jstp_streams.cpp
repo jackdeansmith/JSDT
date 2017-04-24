@@ -157,6 +157,7 @@ void jstp_stream::sender_main(){
 
         //Now we need to figure out if we have any data to send, to do this we
         //need exclusive acess to the send buffer.
+        cout << "Sender thread executing loop" << endl;
     
     }
 }
@@ -165,6 +166,7 @@ void jstp_stream::sender_main(){
 void jstp_stream::receiver_main(){
     //Receiver only runs while the threads are running, duh
     while(threads_running){
+        cout << "Receiver executing loop" << endl;
 
         //First thing we do is try to get a segment out of the socket, we only
         //wait at most one timout interval because we probably have other things
@@ -177,7 +179,7 @@ void jstp_stream::receiver_main(){
 
         //Now we need to do some stuff if we did indeed get something
         if(got_something){
-        
+            cout << "Got a segment" << endl;
         }
     
     }
