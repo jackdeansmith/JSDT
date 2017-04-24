@@ -73,11 +73,12 @@ class jstp_stream{
 
         //Data which must be available to everyone
         std::atomic<bool> threads_running;
-        std::atomic<uint32_t> self_expected_sequence_number;
-        std::atomic<uint32_t> other_expected_sequence_number;
+        std::atomic<uint32_t> self_ack_number;
+        std::atomic<uint32_t> self_sequence_number;
         std::atomic<uint32_t> self_rwnd;
         std::atomic<uint32_t> other_rwnd;
         std::atomic<bool> force_send;
+        size_t window_limit;                //TODO add to constructor
 
         //The send buffer and associated things
         std::mutex send_buffer_mutex;

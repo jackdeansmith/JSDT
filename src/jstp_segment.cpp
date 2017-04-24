@@ -19,6 +19,9 @@ using std::ostringstream; using std::endl;
 //Our source
 #include "jstp_segment.hpp"
 
+const size_t jstp_segment::MAX_PAYLOAD_SIZE;
+const size_t jstp_segment::MAX_SEGMENT_SIZE;
+
 //Getters for header data:
 uint32_t jstp_segment::get_sequence(){
     return sequence;
