@@ -1,7 +1,7 @@
 
 #include "file_layer.hpp"
 #include <iostream>
-using std::endl;
+using std::cout; using std::endl;
 #include <string>
 using std::string;
 #include <algorithm>
@@ -21,7 +21,7 @@ string file_message::str(){
     if(action == action_type::REQUEST){
         oss << request_str << endl;    
     }
-    if(action == action_type::DENY){
+    else if(action == action_type::DENY){
         oss << deny_str << endl;
     }
     else{
@@ -110,7 +110,7 @@ void incoming_message::recv(jstp_stream& stream){
     //Loop forever
     for(;;){
 
-        while(iter == recv_vect.end()){
+        if(iter == recv_vect.end()){
             //Minimize the busy waiting by puting some delay in here
             timespec t;
             t.tv_sec = 0;
@@ -129,12 +129,15 @@ void incoming_message::recv(jstp_stream& stream){
                 action_determined = true; 
                 if(action_string == request_str){
                     action = action_type::REQUEST; 
+                    cout << "Determined the action type was request" << endl;
                 }
                 else if(action_string == deny_str){
                     action = action_type::DENY; 
+                    cout << "Determined the action type was deny" << endl;
                 }
                 else if(action_string == data_str){
                     action = action_type::DATA; 
+                    cout << "Determined the action type was data" << endl;
                 }
             }
             iter++;
@@ -146,6 +149,7 @@ void incoming_message::recv(jstp_stream& stream){
             }
             else{
                 filename_determined = true; 
+                cout << "Determined the filename was: " << filename << endl;
             }
             iter++;
         }
@@ -156,7 +160,9 @@ void incoming_message::recv(jstp_stream& stream){
             }
             else{
                 length_determined = true;
+                cout << "The length string was: " << length_string << endl;
                 length = stoi(length_string);
+                cout << "This was converted to the integer: " << length << endl;
             }
             iter++;
         }
@@ -174,61 +180,6 @@ void incoming_message::recv(jstp_stream& stream){
     
     }
 
+    cout << "Received message at the application layer" << endl;
 
-    /* //Get the action string and translate it to an action */
-    /* c = ' '; */
-    /* string action_str; */
-    /* do{ */
-    /*     size_t read = stream.recv(&c, 1); */ 
-    /*     if(read){ */
-    /*         action_str.push_back(c); */ 
-    /*     } */
-
-    /* } while(c != '\n'); */
-
-    /* if(action_str == request_str){ */
-    /*     action = action_type::REQUEST; */ 
-    /* } */
-    /* else if(action_str == deny_str){ */
-    /*     action = action_type::DENY; */ 
-    /* } */
-    /* else if(action_str == data_str){ */
-    /*     action = action_type::DATA; */ 
-    /* } */
-    /* else{ */
-    /*     //Error condition, TODO handle this */ 
-    /* } */
-
-    /* //Get the filename */
-    /* c = ' '; */
-    /* filename.clear(); */
-    /* do{ */
-    /*     size_t read = stream.recv(&c, 1); */ 
-    /*     if(read){ */
-    /*         filename.push_back(c); */ 
-    /*     } */
-
-    /* } while(c != '\n'); */
-
-    /* //Get the length and convert it to a number */
-    /* c = ' '; */
-    /* string length_str; */
-    /* do{ */
-    /*     size_t read = stream.recv(&c, 1); */ 
-    /*     if(read){ */
-    /*         action_str.push_back(c); */ 
-    /*     } */
-
-    /* } while(c != '\n'); */
-    /* size_t length = stoi(length_str); */
-
-    /* //Get the data */
-    /* data.clear(); */
-    /* while(length > 0){ */
-    /*     size_t read = stream.recv(&c, 1); */ 
-    /*     if(read){ */
-    /*         data.push_back(c); */ 
-    /*         length--; */
-    /*     } */ 
-    /* } */
 }
