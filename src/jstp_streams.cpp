@@ -17,6 +17,8 @@ using std::string;
 using std::cout; using std::endl;
 #include <thread>
 using std::thread;
+#include <mutex>
+using std::mutex; using std::unique_lock;
 #include <atomic>
 using std::atomic;
 #include <vector>
@@ -127,8 +129,19 @@ void jstp_stream::init(uint32_t init_seq, uint32_t init_ack){
     receiver_thread = thread(&jstp_stream::sender_main, this);
 }
 
-//Destructor TODO
+//Destructor
 jstp_stream::~jstp_stream(){
+    //First set the thread running variable to false
+    threads_running = false;
+
+    //The receiver has it's own timeout loop, but the sender will need to be
+    //notified. This will cause it to execute another loop of it's programming
+    //and then return.
+    sender_condition_var.notify_one();
+
+    //Now we need to join both threads
+    sender_thread.join();
+    receiver_thread.join();
 }
 
 //Sender thread main function
