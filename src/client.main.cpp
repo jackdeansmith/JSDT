@@ -69,7 +69,7 @@ int main(int argc, char* argv[]){
 
     //Establish a connection with the server
     jstp_connector connector(sender_hostname, sender_portnum);
-    jstp_stream(connector, 0);      //TODO make this lose some packets
+    jstp_stream stream(connector, 0);      //TODO make this lose some packets
 
     //Craft the request message
     outgoing_message request;
@@ -77,10 +77,11 @@ int main(int argc, char* argv[]){
     request.set_filename(filename);
 
     //Send the request message over the stream
-    //TODO
+    request.send(stream);
 
-    //Get a response message back TODO
+    //Get a response message back
     incoming_message response;
+    response.recv(stream);
 
     //If the response is a DENY message
     if(response.get_action() == action_type::DENY){
