@@ -93,6 +93,81 @@ void incoming_message::extract_data(ostream& os){
 //Quick and dirty recv
 void incoming_message::recv(jstp_stream& stream){
     /* char c; */
+    vector<uint8_t> recv_vect;
+    auto iter = recv_vect.begin();
+    bool action_determined = false;
+    bool filename_determined = false;
+    bool length_determined = false;
+
+    string action_string;
+    string length_string;
+
+    filename.clear();
+    data.clear();
+    size_t length = 0;
+
+    //Loop forever
+    for(;;){
+
+        while(iter == recv_vect.end()){
+            recv_vect = stream.recv(); 
+            iter = recv_vect.begin();
+        }
+
+        //Determine the action type
+        if(!action_determined){
+            if(*iter != '\n'){
+                action_string.push_back(*iter);     
+            }
+            else{
+                action_determined = true; 
+                if(action_string == request_str){
+                    action = action_type::REQUEST; 
+                }
+                else if(action_string == deny_str){
+                    action = action_type::DENY; 
+                }
+                else if(action_string == data_str){
+                    action = action_type::DATA; 
+                }
+            }
+            iter++;
+        }
+
+        else if(!filename_determined){
+            if(*iter != '\n'){
+                filename.push_back(*iter);     
+            }
+            else{
+                filename_determined = true; 
+            }
+            iter++;
+        }
+
+        else if(!length_determined){
+            if(*iter != '\n'){
+                length_string.push_back(*iter);     
+            }
+            else{
+                length_determined = true;
+                length = stoi(length_string);
+            }
+            iter++;
+        }
+
+        else if(length > 0){
+            data.reserve(length);
+            data.push_back(*iter);        
+            iter++;
+            length--;
+        }
+
+        else{
+            break;
+        }
+    
+    }
+
 
     /* //Get the action string and translate it to an action */
     /* c = ' '; */
