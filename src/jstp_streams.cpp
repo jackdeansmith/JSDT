@@ -121,3 +121,32 @@ jstp_stream::jstp_stream(jstp_acceptor& acceptor, double probability_loss):
 //Destructor TODO
 jstp_stream::~jstp_stream(){
 }
+
+//Send and recv methods, relatively simple in retrospect
+bool jstp_stream::send(const vector<uint8_t>& v){
+    //Aquire the send buffer mutex
+    send_buffer_mutex.lock();
+
+    //Figure out how much space is left in the buffer
+    size_t available = BUFF_CAPACITY - send_buffer.size();
+
+    //If there isn't enough space, then report back false
+    if(available < v.size()){
+        send_buffer_mutex.unlock();
+        return false; 
+    }
+
+    copy(v.begin(), v.end(), back_inserter(send_buffer));
+    send_buffer_mutex.unlock();
+    return true;
+}
+
+vector<uint8_t> jstp_stream::recv(){
+    recv_buffer_mutex.lock();
+    vector<uint8_t> out;
+    out.reserve(recv_buffer.size());
+    copy(recv_buffer.begin(), recv_buffer.end(), back_inserter(out));
+    recv_buffer.clear();
+    recv_buffer_mutex.unlock();
+    return out;
+}
