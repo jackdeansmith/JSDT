@@ -130,13 +130,14 @@ jstp_stream::~jstp_stream(){
     cout << "Both threads exited!" << endl;
 }
 
-//TODO impl these
+//Put user data into the sock pair to be sent
 size_t jstp_stream::send(void* buffer, size_t len){
     return write(sockpair[0], buffer, len);    
 }
 
-size_t jstp_stream::recv(void* buffer, size_t len){
-    
+//Take user data out of the sock pair
+size_t jstp_stream::recv(void* buffer, size_t len){ 
+    return read(sockpair[0], buffer, len);
 }
 
 void jstp_stream::sender(atomic<bool>& running){
