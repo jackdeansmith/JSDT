@@ -68,26 +68,32 @@ int main(int argc, char* argv[]){
     cout << endl;
 
     //Establish a connection with the server
+    cout << "Attempting to establish a connection..." << endl;
     jstp_connector connector(sender_hostname, sender_portnum);
     jstp_stream stream(connector, 0);      //TODO make this lose some packets
+    cout << "    ... connection established." << endl << endl;
 
     //Craft the request message
+    cout << "Attempting to send a request message" << endl;
     outgoing_message request;
     request.set_action(action_type::REQUEST);
     request.set_filename(filename);
 
     //Send the request message over the stream
     request.send(stream);
+    cout << "... request message sent." << endl << endl;
+
 
     //Get a response message back
+    cout << "Attempting to get a response back..." << endl;
     incoming_message response;
     response.recv(stream);
+    cout << "    ... response received." << endl << endl;
 
     //If the response is a DENY message
     if(response.get_action() == action_type::DENY){
         //Then print an error and exit.
-        cout << "Sorry, the server said it didn't have that file available."
-             << endl; 
+        cout << "Sorry. The server said that it didn't have that file." << endl;
         cout << "Exiting." << endl;
         return 1;
     }
