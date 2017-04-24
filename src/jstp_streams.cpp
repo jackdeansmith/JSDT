@@ -10,6 +10,7 @@ using std::string;
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <fcntl.h>
 
 //Just for testing, TODO remove
 #include <iostream>
@@ -143,7 +144,9 @@ size_t jstp_stream::recv(void* buffer, size_t len){
 void jstp_stream::sender(atomic<bool>& running){
     while(running){
         //First, load app data
+        cout << "Sender thread at top of loop" << endl;
         load_app_data();
+        cout << "App data loaded" << endl;
 
         //Figure out how much data we are allowed to send
         size_t allowed_to_send;
@@ -180,6 +183,10 @@ void jstp_stream::init(uint32_t seq, uint32_t ack){
     //application layer.
     socketpair(AF_UNIX, SOCK_STREAM, 0, sockpair);
 
+    //Put them in non-blocking mode, this is very convinient
+    fcntl(sockpair[0], F_SETFL, fcntl(sockpair[0], F_GETFL, 0) | O_NONBLOCK);
+    fcntl(sockpair[1], F_SETFL, fcntl(sockpair[1], F_GETFL, 0) | O_NONBLOCK);
+
     //Now, lets set the sequence and ack numbers appropriatly
     base_seq_num = seq;
     ack_num = ack;
@@ -194,19 +201,29 @@ void jstp_stream::init(uint32_t seq, uint32_t ack){
 //Get data from the socket pair and put it in the send buffer. Focus on making
 //this function fast.
 void jstp_stream::load_app_data(){
+    cout << "Load app data called" << endl;
     //Get exclusive access to the send buffer
     send_buffer_mutex.lock();
+    cout << "locked mutex" << endl;
 
     //Figure out how much more we can cram in the send buffer
     size_t available = BUFF_CAPACITY - send_buff.size();
 
     //Try to read that much into the load buffer
-    size_t num_read = read(sockpair[1], load_buff, available);
+    //TODO use select with a timeout
+    int num_read = read(sockpair[1], load_buff, available);
+    if(num_read == -1){
+        cout << "Error condition, returning early" << endl;
+        send_buffer_mutex.unlock();
+        return; 
+    }
+    cout << "Loaded " << num_read << " bytes of data." << endl;
 
     //Copy the data we read (if any) into the send buffer deque
     copy(load_buff, load_buff + num_read, back_inserter(send_buff));
 
     //Now let other people use the send buffer
     send_buffer_mutex.unlock();
+    cout << "Mutex unlocked" << endl;
 }
 
