@@ -93,6 +93,7 @@ void incoming_message::extract_data(ostream& os){
 
 //Quick and dirty recv
 void incoming_message::recv(jstp_stream& stream){
+    cout << "A call to the file_layer recv was just made" << endl;
     /* char c; */
     vector<uint8_t> recv_vect;
     auto iter = recv_vect.begin();
@@ -102,8 +103,7 @@ void incoming_message::recv(jstp_stream& stream){
 
     string action_string;
     string length_string;
-
-    filename.clear();
+filename.clear();
     data.clear();
     size_t length = 0;
 
@@ -121,7 +121,7 @@ void incoming_message::recv(jstp_stream& stream){
         }
 
         //Determine the action type
-        if(!action_determined){
+        else if(!action_determined){
             if(*iter != '\n'){
                 action_string.push_back(*iter);     
             }
@@ -129,15 +129,12 @@ void incoming_message::recv(jstp_stream& stream){
                 action_determined = true; 
                 if(action_string == request_str){
                     action = action_type::REQUEST; 
-                    cout << "Determined the action type was request" << endl;
                 }
                 else if(action_string == deny_str){
                     action = action_type::DENY; 
-                    cout << "Determined the action type was deny" << endl;
                 }
                 else if(action_string == data_str){
                     action = action_type::DATA; 
-                    cout << "Determined the action type was data" << endl;
                 }
             }
             iter++;
@@ -149,7 +146,6 @@ void incoming_message::recv(jstp_stream& stream){
             }
             else{
                 filename_determined = true; 
-                cout << "Determined the filename was: " << filename << endl;
             }
             iter++;
         }
@@ -160,9 +156,7 @@ void incoming_message::recv(jstp_stream& stream){
             }
             else{
                 length_determined = true;
-                cout << "The length string was: " << length_string << endl;
                 length = stoi(length_string);
-                cout << "This was converted to the integer: " << length << endl;
             }
             iter++;
         }
@@ -179,7 +173,4 @@ void incoming_message::recv(jstp_stream& stream){
         }
     
     }
-
-    cout << "Received message at the application layer" << endl;
-
 }

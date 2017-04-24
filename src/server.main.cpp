@@ -87,7 +87,9 @@ int main(int argc, char* argv[]){
         outgoing_message deny;
         deny.set_action(action_type::DENY);
         deny.set_filename(req.get_filename());
+        cout << "Attempting to send" << endl;
         deny.send(stream);
+        cout << "Exiting now" << endl;
         return 1;
     }
 

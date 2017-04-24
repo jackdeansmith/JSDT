@@ -143,6 +143,10 @@ void jstp_stream::init(uint32_t init_seq, uint32_t init_ack){
 //Destructor
 jstp_stream::~jstp_stream(){
     //First set the thread running variable to false
+    //TODO this is a hack, get rid of it
+    /* timespec t; */
+    /* t.tv_sec = 5; */
+    /* nanosleep(&t, nullptr); */
     threads_running = false;
 
     //The receiver has it's own timeout loop, but the sender will need to be
@@ -153,33 +157,27 @@ jstp_stream::~jstp_stream(){
     //Now we need to join both threads
     sender_thread.join();
     receiver_thread.join();
-    cout << "Threads exited sucessfully" << endl;
 }
 
 //Sender thread main function
 void jstp_stream::sender_main(){
-    cout << "Sender main started" << endl;
     //Sender only runs while the threads are running, obviously
     while(threads_running){
 
         //The first thing we do is wait for someone to notify us that we have a
         //job to do.
-        cout << "Sender waiting for notification" << endl;
         unique_lock<mutex> l(sender_notify_lock);
         sender_condition_var.wait_for(l, std::chrono::seconds(1));
-        cout << "Sender has been notified" << endl;
 
         //Infinite loop, exited once all data that can be sent immediatly has
         //been sent
         for(;;){
             //Now we need to figure out if we have any data to send, to do this we
             //need exclusive acess to the send buffer.
-            cout << "Sender thread executing loop" << endl;
             send_buffer_mutex.lock();
 
             //Figure out how much buffered data we have
             size_t buffered_data = send_buffer.size() - offset;
-            cout << "There are " << buffered_data << " bytes of buffered but unsent data" << endl;
 
             //Figure out how much we are allowed to put on the wire
             size_t flow_limit = other_rwnd.load() - offset;
@@ -188,12 +186,9 @@ void jstp_stream::sender_main(){
             //Figure out how big the payload would be
             size_t payload_size = min(flow_limit, buffered_data);
             payload_size = min(payload_size, jstp_segment::MAX_PAYLOAD_SIZE);
-            cout << "Size of send buffer: " << send_buffer.size() << endl;
-            cout << "Payload size = " << payload_size << endl;
 
             //We only send if we have a payload or we are bing forced to send
             if(payload_size > 0 || force_send.load()){
-                cout << "Sender is sending a segment!" << endl;            
                 jstp_segment outgoing_seg;
 
                 //Set all the headers appropriatly
@@ -220,10 +215,17 @@ void jstp_stream::sender_main(){
 
                 //Turn off the force send flag
                 force_send.store(false);
+
+                cout_mutex.lock();
+                cout << "Sending this segment:" << endl;
+                cout << outgoing_seg.header_str() << endl;
+                cout << outgoing_seg.payload_str() << endl;
+                cout_mutex.unlock();
             }
 
             //If there ever is no data to send, we break
             else{
+                send_buffer_mutex.unlock();
                 break; 
             }
 
@@ -249,10 +251,6 @@ void jstp_stream::receiver_main(){
         //Now we need to do some stuff if we did indeed get something
         if(got_something){
 
-            //Debug output, look at the headers we got
-            cout << "Got something" << endl;
-            cout << incoming_seg.header_str() << endl;
-
             //First check to see if the segment was a close flag, if it is, we
             //need to respond even if it's out of order.
             if(incoming_seg.get_close_flag()){
@@ -270,9 +268,14 @@ void jstp_stream::receiver_main(){
                 //If there is space...
                 size_t available_space = BUFF_CAPACITY - recv_buffer.size();
                 if(available_space > incoming_seg.get_length()){
+                    cout_mutex.lock();
+                    cout << "recvd and buffering this segment:" << endl;
+                    cout << incoming_seg.header_str() << endl;
+                    cout << incoming_seg.payload_str() << endl;
+                    cout_mutex.unlock();
 
                     //We need to update the sequence number we expect
-                    uint32_t new_expected = self_ack_number + 
+                    uint32_t new_expected = self_ack_number.load() + 
                                             incoming_seg.get_length();
                     self_ack_number.store(new_expected);
 
@@ -280,7 +283,7 @@ void jstp_stream::receiver_main(){
                     other_rwnd.store(incoming_seg.get_window());
 
                     //We need to reduce the size of our rwnd
-                    self_rwnd -= incoming_seg.get_window();
+                    self_rwnd -= incoming_seg.get_length();
 
                     //Finally, we should copy the data into our recv buffer
                     copy(incoming_seg.payload_begin(), incoming_seg.payload_end()
@@ -290,17 +293,17 @@ void jstp_stream::receiver_main(){
                 recv_buffer_mutex.unlock();
             }
 
+
             //TODO deal with ack stuff, this is all for reliable transfer
             send_buffer_mutex.lock();
             send_buffer_mutex.unlock();
 
-            //Even if it wasn't the segment we expected, we did receive
-            //something and that means that the sender should likely do some ack
-            //sending.
-            force_send.store(true); 
-            sender_condition_var.notify_one();
+            //If the segment we got contained any data at all, we need to ack it
+            if(incoming_seg.get_length() > 0){
+                force_send.store(true); 
+                sender_condition_var.notify_one();
+            }
         }
-    
     }
 }
 
@@ -324,7 +327,6 @@ bool jstp_stream::send(const vector<uint8_t>& v){
 
     //Finally, signal the sender thread that it should spin back up
     sender_condition_var.notify_one();
-    cout << "Notified sender of data it needs to get out there" << endl;
 
     return true;
 }
