@@ -78,6 +78,9 @@ jstp_stream::jstp_stream(jstp_connector& connector, double probability_loss):
 
     //The synack should contain the servers initial sequence number
     uint32_t server_isn = synack_seg.get_sequence();
+
+    //TODO use the real numbers we got
+    init(42, 42);
 }
 
 //Constructor for JSTP stream on the server side
@@ -111,13 +114,15 @@ jstp_stream::jstp_stream(jstp_acceptor& acceptor, double probability_loss):
     stream_sock.send(synack_seg);
 
     //TODO wait for normal ack back
-    //TODO init
+    init(42, 42);       //TODO make this real
 }
 
 //Function which initalizes all variables and starts threads for both
 //constructors
 void jstp_stream::init(uint32_t init_seq, uint32_t init_ack){
     
+    //Start the threads, make sure this is the last thing init does
+    threads_running = true;
     sender_thread = thread(&jstp_stream::sender_main, this);
     receiver_thread = thread(&jstp_stream::sender_main, this);
 }

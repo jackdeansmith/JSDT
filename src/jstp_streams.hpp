@@ -104,6 +104,5 @@ class jstp_stream{
 
         //Function which starts threads and inits variables, used by the
         //constructor
-        //
         void init(uint32_t, uint32_t);
 };
