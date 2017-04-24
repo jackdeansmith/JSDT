@@ -15,7 +15,7 @@
  */
 
 /* The JSTP flag field consists of 16 bits. 
- * The first three most sygnificant bits represent the SYN, ACK, and CLOSE
+ * The first three most sygnificant bits represent the SYN, ACK, and EXIT
  * flags, the remaining bits are reserved and unused.
  */
 
@@ -49,7 +49,7 @@ class jstp_segment: public serializable{
         uint16_t get_port();
         bool get_syn_flag();
         bool get_ack_flag();
-        bool get_close_flag();
+        bool get_exit_flag();
 
         //Setters for header data
         void set_sequence(uint32_t);
@@ -59,10 +59,10 @@ class jstp_segment: public serializable{
         void set_port(uint16_t);
         void set_syn_flag();
         void set_ack_flag();
-        void set_close_flag();
+        void set_exit_flag();
         void reset_syn_flag();
         void reset_ack_flag();
-        void reset_close_flag();
+        void reset_exit_flag();
 
         //Interact with the payload
         void clear_payload();

@@ -257,9 +257,11 @@ void jstp_stream::receiver_main(){
 
             //First check to see if the segment was a close flag, if it is, we
             //need to respond even if it's out of order.
-            if(incoming_seg.get_close_flag()){
+            if(incoming_seg.get_exit_flag()){
                 //TODO handle this case 
                 cout << "Receiver got a segment with a close flag." << endl;
+                connected = false;
+                closing = false;
             }
 
             //If it was the segment we expected
