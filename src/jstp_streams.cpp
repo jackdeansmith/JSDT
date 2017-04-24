@@ -39,7 +39,6 @@ jstp_connector::jstp_connector(string h, uint16_t p): hostname(h), port(p){}
 jstp_acceptor::jstp_acceptor(uint16_t portno):
     acceptor_socket(jstp_segment::MAX_SEGMENT_SIZE){
     
-    cout << "Attempting to create acceptor" << endl;
     //Bind the socket to the specified port
     acceptor_socket.bind_local(portno);
 }
@@ -128,7 +127,8 @@ jstp_stream::~jstp_stream(){
     //Join both the thread
     sender_thread.join();
     receiver_thread.join();
-    cout << "Both threads exited!" << endl;
+    loader_thread.join();
+    cout << "Worker threads exited!" << endl;
 }
 
 //Put user data into the sock pair to be sent
@@ -145,8 +145,6 @@ void jstp_stream::sender(atomic<bool>& running){
     while(running){
         //First, load app data
         cout << "Sender thread at top of loop" << endl;
-        load_app_data();
-        cout << "App data loaded" << endl;
 
         //Figure out how much data we are allowed to send
         size_t allowed_to_send;
@@ -176,6 +174,50 @@ void jstp_stream::receiver(atomic<bool>& running){
     //TODO closing protocol
 }
 
+//Thread which simply loads data into the send buffer as is appropriate
+void jstp_stream::loader(std::atomic<bool>& running){
+    while(running){
+
+        //First, we wait around for a while to see if there is some data for us
+        //to send. Every .5 sec we timeout so that the thread can exit if we
+        //need it to.
+        timeval tv;
+        tv.tv_sec = 0;
+        tv.tv_usec = 500000;
+        fd_set readset;
+        FD_ZERO(&readset);
+        FD_SET(sockpair[1], &readset);
+        int flag = select(sockpair[1] + 1, &readset, nullptr, nullptr, &tv);
+
+        //If flag is 0, we waited our whole timeout and nothing happened, that
+        //means we just try again.
+        if(flag == 0){
+            continue;        
+        }
+
+        //Once we get to this point, we know that we have data that needs to be
+        //sent.
+        cout << "loader thread: I found some data to put in the buffer" << endl;
+    
+        //Get exclusive access to the send buffer
+        send_buffer_mutex.lock();
+
+        //Figure out how much more we can cram in the send buffer
+        size_t available = BUFF_CAPACITY - send_buff.size();
+
+        //Try to read that much into the load buffer
+        int num_read = read(sockpair[1], load_buff, available);
+        cout << "Loaded " << num_read << " bytes of data." << endl;
+
+        //Copy the data we read (if any) into the send buffer deque
+        copy(load_buff, load_buff + num_read, back_inserter(send_buff));
+
+        //Now let other people use the send buffer
+        send_buffer_mutex.unlock();
+    }
+    return;
+}
+
 //Init function, takes the sequence number and the ack number we should kick
 //things off with
 void jstp_stream::init(uint32_t seq, uint32_t ack){
@@ -184,8 +226,8 @@ void jstp_stream::init(uint32_t seq, uint32_t ack){
     socketpair(AF_UNIX, SOCK_STREAM, 0, sockpair);
 
     //Put them in non-blocking mode, this is very convinient
-    fcntl(sockpair[0], F_SETFL, fcntl(sockpair[0], F_GETFL, 0) | O_NONBLOCK);
-    fcntl(sockpair[1], F_SETFL, fcntl(sockpair[1], F_GETFL, 0) | O_NONBLOCK);
+    /* fcntl(sockpair[0], F_SETFL, fcntl(sockpair[0], F_GETFL, 0) | O_NONBLOCK); */
+    /* fcntl(sockpair[1], F_SETFL, fcntl(sockpair[1], F_GETFL, 0) | O_NONBLOCK); */
 
     //Now, lets set the sequence and ack numbers appropriatly
     base_seq_num = seq;
@@ -195,35 +237,5 @@ void jstp_stream::init(uint32_t seq, uint32_t ack){
     running = true;
     sender_thread = thread([this](){sender(std::ref(running));});
     receiver_thread = thread([this](){receiver(std::ref(running));});
+    loader_thread = thread([this](){loader(std::ref(running));});
 }
-
-
-//Get data from the socket pair and put it in the send buffer. Focus on making
-//this function fast.
-void jstp_stream::load_app_data(){
-    cout << "Load app data called" << endl;
-    //Get exclusive access to the send buffer
-    send_buffer_mutex.lock();
-    cout << "locked mutex" << endl;
-
-    //Figure out how much more we can cram in the send buffer
-    size_t available = BUFF_CAPACITY - send_buff.size();
-
-    //Try to read that much into the load buffer
-    //TODO use select with a timeout
-    int num_read = read(sockpair[1], load_buff, available);
-    if(num_read == -1){
-        cout << "Error condition, returning early" << endl;
-        send_buffer_mutex.unlock();
-        return; 
-    }
-    cout << "Loaded " << num_read << " bytes of data." << endl;
-
-    //Copy the data we read (if any) into the send buffer deque
-    copy(load_buff, load_buff + num_read, back_inserter(send_buff));
-
-    //Now let other people use the send buffer
-    send_buffer_mutex.unlock();
-    cout << "Mutex unlocked" << endl;
-}
-

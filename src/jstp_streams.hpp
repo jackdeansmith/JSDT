@@ -80,7 +80,6 @@ class jstp_stream{
 
         //Helper function which loads data from the socket pair into the send
         //buffer. Needs some buffer area for its own use
-        void load_app_data();
         uint8_t load_buff[BUFF_CAPACITY];
 
         //Atomics for keeping track of variaus states
@@ -100,6 +99,8 @@ class jstp_stream{
         //The two threads which run to make our data transfer happen
         std::thread sender_thread;
         std::thread receiver_thread;
-        void receiver(std::atomic<bool>& running);
+        std::thread loader_thread;
         void sender(std::atomic<bool>& running);
+        void receiver(std::atomic<bool>& running);
+        void loader(std::atomic<bool>& running);
 };
