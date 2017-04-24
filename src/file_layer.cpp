@@ -10,6 +10,7 @@ using std::copy;
 using std::ostream_iterator;
 #include <sstream>
 using std::ostringstream;
+#include <time.h>
 
 //Get a string representation of the message, this might be used later for the
 //send function if I'm feeling particularly lazy.
@@ -110,6 +111,11 @@ void incoming_message::recv(jstp_stream& stream){
     for(;;){
 
         while(iter == recv_vect.end()){
+            //Minimize the busy waiting by puting some delay in here
+            timespec t;
+            t.tv_sec = 0;
+            t.tv_nsec = 500000000;
+            nanosleep(&t, nullptr);
             recv_vect = stream.recv(); 
             iter = recv_vect.begin();
         }
