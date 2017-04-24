@@ -26,6 +26,7 @@ using std::atomic;
 #include <vector>
 using std::vector;
 #include <functional>
+#include <chrono>
 #include <algorithm>
 using std::min;
 
@@ -84,7 +85,7 @@ jstp_stream::jstp_stream(jstp_connector& connector, double probability_loss):
     uint32_t server_isn = synack_seg.get_sequence();
 
     //TODO use the real numbers we got
-    init(42, 42);
+    init(our_isn + 1, server_isn + 1);
 }
 
 //Constructor for JSTP stream on the server side
@@ -118,12 +119,20 @@ jstp_stream::jstp_stream(jstp_acceptor& acceptor, double probability_loss):
     stream_sock.send(synack_seg);
 
     //TODO wait for normal ack back
-    init(42, 42);       //TODO make this real
+    init(our_isn + 1, other_isn + 1);       //TODO make this real
 }
 
 //Function which initalizes all variables and starts threads for both
 //constructors
 void jstp_stream::init(uint32_t init_seq, uint32_t init_ack){
+
+    //Set the initial sequence and ack numbers
+    self_sequence_number.store(init_seq);
+    sender_base_sequence = init_seq;
+    self_ack_number.store(init_ack);
+
+    self_rwnd = BUFF_CAPACITY;
+    other_rwnd = BUFF_CAPACITY;
     
     //Start the threads, make sure this is the last thing init does
     threads_running = true;
@@ -149,13 +158,16 @@ jstp_stream::~jstp_stream(){
 
 //Sender thread main function
 void jstp_stream::sender_main(){
+    cout << "Sender main started" << endl;
     //Sender only runs while the threads are running, obviously
     while(threads_running){
 
         //The first thing we do is wait for someone to notify us that we have a
         //job to do.
+        cout << "Sender waiting for notification" << endl;
         unique_lock<mutex> l(sender_notify_lock);
-        sender_condition_var.wait(l);
+        sender_condition_var.wait_for(l, std::chrono::seconds(1));
+        cout << "Sender has been notified" << endl;
 
         //Infinite loop, exited once all data that can be sent immediatly has
         //been sent
@@ -165,14 +177,19 @@ void jstp_stream::sender_main(){
             cout << "Sender thread executing loop" << endl;
             send_buffer_mutex.lock();
 
-            //Figure out how we can put on the wire
+            //Figure out how much buffered data we have
+            size_t buffered_data = send_buffer.size() - offset;
+            cout << "There are " << buffered_data << " bytes of buffered but unsent data" << endl;
+
+            //Figure out how much we are allowed to put on the wire
             size_t flow_limit = other_rwnd.load() - offset;
-            size_t send_limit = min(flow_limit, window_limit);
-            cout << "Flow limit = " << flow_limit << endl;
-            cout << "Send limit = " << send_limit << endl;
+            flow_limit = min(flow_limit, window_limit);
 
             //Figure out how big the payload would be
-            size_t payload_size = min(flow_limit, jstp_segment::MAX_PAYLOAD_SIZE);
+            size_t payload_size = min(flow_limit, buffered_data);
+            payload_size = min(payload_size, jstp_segment::MAX_PAYLOAD_SIZE);
+            cout << "Size of send buffer: " << send_buffer.size() << endl;
+            cout << "Payload size = " << payload_size << endl;
 
             //We only send if we have a payload or we are bing forced to send
             if(payload_size > 0 || force_send.load()){
@@ -307,7 +324,7 @@ bool jstp_stream::send(const vector<uint8_t>& v){
 
     //Finally, signal the sender thread that it should spin back up
     sender_condition_var.notify_one();
-    cout << "GOT A CALL TO SEND, DATA IS NOW IN BUFFER" << endl;
+    cout << "Notified sender of data it needs to get out there" << endl;
 
     return true;
 }
