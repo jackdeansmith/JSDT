@@ -71,7 +71,11 @@ class jstp_stream{
         udp_socket stream_sock;
 
         //Data which must be available to everyone
-        std::atomic<uint32_t> expected_sequence_number;
+        std::atomic<bool> threads_running;
+        std::atomic<uint32_t> self_expected_sequence_number;
+        std::atomic<uint32_t> other_expected_sequence_number;
+        std::atomic<uint32_t> self_rwnd;
+        std::atomic<uint32_t> other_rwnd;
         std::atomic<bool> force_send;
 
         //The send buffer and associated things
@@ -84,4 +88,22 @@ class jstp_stream{
         std::mutex recv_buffer_mutex;
         std::deque<uint8_t> recv_buffer;
 
+        //Timeval which indicates when the next timeout will happen
+        std::mutex timeout_mutex;
+        timeval next_timeout;
+
+        //Sender thread support
+        std::thread sender_thread;
+        std::mutex sender_notify_lock;
+        std::condition_variable sender_condition_var;
+        void sender_main();
+
+        //Receiver thread support
+        std::thread receiver_thread;
+        void receiver_main();
+
+        //Function which starts threads and inits variables, used by the
+        //constructor
+        //
+        void init(uint32_t, uint32_t);
 };

@@ -78,10 +78,6 @@ jstp_stream::jstp_stream(jstp_connector& connector, double probability_loss):
 
     //The synack should contain the servers initial sequence number
     uint32_t server_isn = synack_seg.get_sequence();
-
-    //Now use init to start the threads, because we already burned out isn on
-    //the syn packet, incriment our sequence by one. Similarly for the server
-    //ack number because we ack the next byte we expect.
 }
 
 //Constructor for JSTP stream on the server side
@@ -114,12 +110,36 @@ jstp_stream::jstp_stream(jstp_acceptor& acceptor, double probability_loss):
     //Send the synack back
     stream_sock.send(synack_seg);
 
-    //TODO wait for a normal ack?
+    //TODO wait for normal ack back
+    //TODO init
+}
 
+//Function which initalizes all variables and starts threads for both
+//constructors
+void jstp_stream::init(uint32_t init_seq, uint32_t init_ack){
+    
+    sender_thread = thread(&jstp_stream::sender_main, this);
+    receiver_thread = thread(&jstp_stream::sender_main, this);
 }
 
 //Destructor TODO
 jstp_stream::~jstp_stream(){
+}
+
+//Sender thread main function
+void jstp_stream::sender_main(){
+    //Sender only runs while the threads are running, obviously
+    while(threads_running){
+    
+    }
+}
+
+//Receiver thread main function
+void jstp_stream::receiver_main(){
+    //Receiver only runs while the threads are running, duh
+    while(threads_running){
+    
+    }
 }
 
 //Send and recv methods, relatively simple in retrospect
