@@ -104,12 +104,10 @@ void incoming_message::recv(jstp_stream& stream){
     size_t length = 0;
 
     //Loop forever
-    bool finished = false;
     vector<string> strings;
     strings.resize(3);
     size_t string_index = 0;
-    while(!finished){
-
+    while(string_index < 3){
         //If we are at the end of our vector, wait around for half a second and
         //grab some more data, TODO make this event driven somehow?
         while(iter == recv_vect.end()){
@@ -135,99 +133,43 @@ void incoming_message::recv(jstp_stream& stream){
                 strings[string_index].push_back(c); 
             }
             iter++;
-            continue;
         }
-
-        //This means we have got the strings we needed from the app layer header
-        if(string_index == 3){
-
-            //Set the action type
-            if(strings[0] == request_str){
-                action = action_type::REQUEST; 
-            } 
-            else if(strings[0] == deny_str){
-                action = action_type::DENY; 
-            } 
-            else if(strings[0] == data_str){
-                action = action_type::DATA; 
-            } 
-
-            //Set the filename
-            filename = strings[1];
-            length = stoi(strings[2]);
-            string_index++;
-            cout << "Action string: " << strings[0] << endl;
-            cout << "Filename: " << strings[1] << endl;
-            cout << "Lenstr : " << strings[2] << endl;
-            continue;
-        }
-
-        if(string_index == 4){
-            if(length > 0){
-                data.push_back(c); 
-                iter++;
-                length--;
-            }
-            if(length == 0){
-                break; 
-            }
-            continue;
-        }
-
-
     }
 
-        /* //Determine the action type */
-        /* else if(!action_determined){ */
-        /*     if(*iter != '\n'){ */
-        /*         action_string.push_back(*iter); */     
-        /*     } */
-        /*     else{ */
-        /*         action_determined = true; */ 
-        /*         if(action_string == request_str){ */
-        /*             action = action_type::REQUEST; */ 
-        /*         } */
-        /*         else if(action_string == deny_str){ */
-        /*             action = action_type::DENY; */ 
-        /*         } */
-        /*         else if(action_string == data_str){ */
-        /*             action = action_type::DATA; */ 
-        /*         } */
-        /*     } */
-        /*     iter++; */
-        /* } */
+    //Set the action type
+    if(strings[0] == request_str){
+        action = action_type::REQUEST; 
+    } 
+    else if(strings[0] == deny_str){
+        action = action_type::DENY; 
+    } 
+    else if(strings[0] == data_str){
+        action = action_type::DATA; 
+    } 
 
-        /* else if(!filename_determined){ */
-        /*     if(*iter != '\n'){ */
-        /*         filename.push_back(*iter); */     
-        /*     } */
-        /*     else{ */
-        /*         filename_determined = true; */ 
-        /*     } */
-        /*     iter++; */
-        /* } */
+    //Set the filename
+    filename = strings[1];
+    length = stoi(strings[2]);
+    string_index++;
+    cout << "Action string: " << strings[0] << endl;
+    cout << "Filename: " << strings[1] << endl;
+    cout << "Lenstr : " << strings[2] << endl;
 
-        /* else if(!length_determined){ */
-        /*     if(*iter != '\n'){ */
-        /*         length_string.push_back(*iter); */     
-        /*     } */
-        /*     else{ */
-        /*         length_determined = true; */
-        /*         length = stoi(length_string); */
-        /*     } */
-        /*     iter++; */
-        /* } */
+    //Get the remaining characters into the data vector
+    data.reserve(length);
+    while(length > 0){
+        if(iter == recv_vect.end()){
+            cout << "In recv loop" << endl;
+            timespec t;
+            t.tv_sec = 0;
+            t.tv_nsec = 500000000;
+            nanosleep(&t, nullptr);
+            recv_vect = stream.recv(); 
+            iter = recv_vect.begin();
+        }
 
-        /* else if(length > 0){ */
-        /*     data.reserve(length); */
-        /*     data.push_back(*iter); */        
-        /*     iter++; */
-        /*     length--; */
-        /* } */
-
-        /* else{ */
-        /*     break; */
-        /* } */
-    
-
+        data.push_back(*iter);
+        iter++;
+        length--;
+    }
 }
