@@ -288,15 +288,25 @@ void jstp_stream::receiver_main(){
                     //Finally, we should copy the data into our recv buffer
                     copy(incoming_seg.payload_begin(), incoming_seg.payload_end()
                             ,back_inserter(recv_buffer));
+
+                    //We also need to update the send buffer to get rid of the
+                    //old data
+                    send_buffer_mutex.lock();
+                    cout << "Clearing old data" << endl;
+                    size_t diff = incoming_seg.get_ack() - sender_base_sequence;
+                    cout << "Found " << diff << " Bytes to clear" << endl;
+                    sender_base_sequence += diff;
+                    offset -= diff;
+                    send_buffer.erase(send_buffer.begin(), 
+                                      send_buffer.begin() + diff);
+                    send_buffer_mutex.unlock();
+
                 }
 
                 recv_buffer_mutex.unlock();
             }
 
 
-            //TODO deal with ack stuff, this is all for reliable transfer
-            send_buffer_mutex.lock();
-            send_buffer_mutex.unlock();
 
             //If the segment we got contained any data at all, we need to ack it
             if(incoming_seg.get_length() > 0){
