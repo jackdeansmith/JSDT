@@ -93,25 +93,27 @@ void incoming_message::extract_data(ostream& os){
 
 //Quick and dirty recv
 void incoming_message::recv(jstp_stream& stream){
-    cout << "A call to the file_layer recv was just made" << endl;
     /* char c; */
     vector<uint8_t> recv_vect;
     auto iter = recv_vect.begin();
-    bool action_determined = false;
-    bool filename_determined = false;
-    bool length_determined = false;
 
     string action_string;
     string length_string;
-filename.clear();
+    filename.clear();
     data.clear();
     size_t length = 0;
 
     //Loop forever
-    for(;;){
+    bool finished = false;
+    vector<string> strings;
+    strings.resize(3);
+    size_t string_index = 0;
+    while(!finished){
 
-        if(iter == recv_vect.end()){
-            //Minimize the busy waiting by puting some delay in here
+        //If we are at the end of our vector, wait around for half a second and
+        //grab some more data, TODO make this event driven somehow?
+        while(iter == recv_vect.end()){
+            cout << "In recv loop" << endl;
             timespec t;
             t.tv_sec = 0;
             t.tv_nsec = 500000000;
@@ -120,57 +122,112 @@ filename.clear();
             iter = recv_vect.begin();
         }
 
-        //Determine the action type
-        else if(!action_determined){
-            if(*iter != '\n'){
-                action_string.push_back(*iter);     
+        //Fill out the strings, using newlines as a separator
+        char c = *iter; 
+        if(string_index < 3){
+            cout << "Char report: " << c << endl;
+            if(c == '\n'){
+                string_index++; 
+                cout << "String index: " << string_index << endl;
             }
+
             else{
-                action_determined = true; 
-                if(action_string == request_str){
-                    action = action_type::REQUEST; 
-                }
-                else if(action_string == deny_str){
-                    action = action_type::DENY; 
-                }
-                else if(action_string == data_str){
-                    action = action_type::DATA; 
-                }
+                strings[string_index].push_back(c); 
             }
             iter++;
+            continue;
         }
 
-        else if(!filename_determined){
-            if(*iter != '\n'){
-                filename.push_back(*iter);     
-            }
-            else{
-                filename_determined = true; 
-            }
-            iter++;
+        //This means we have got the strings we needed from the app layer header
+        if(string_index == 3){
+
+            //Set the action type
+            if(strings[0] == request_str){
+                action = action_type::REQUEST; 
+            } 
+            else if(strings[0] == deny_str){
+                action = action_type::DENY; 
+            } 
+            else if(strings[0] == data_str){
+                action = action_type::DATA; 
+            } 
+
+            //Set the filename
+            filename = strings[1];
+            length = stoi(strings[2]);
+            string_index++;
+            cout << "Action string: " << strings[0] << endl;
+            cout << "Filename: " << strings[1] << endl;
+            cout << "Lenstr : " << strings[2] << endl;
+            continue;
         }
 
-        else if(!length_determined){
-            if(*iter != '\n'){
-                length_string.push_back(*iter);     
+        if(string_index == 4){
+            if(length > 0){
+                data.push_back(c); 
+                iter++;
+                length--;
             }
-            else{
-                length_determined = true;
-                length = stoi(length_string);
+            if(length == 0){
+                break; 
             }
-            iter++;
+            continue;
         }
 
-        else if(length > 0){
-            data.reserve(length);
-            data.push_back(*iter);        
-            iter++;
-            length--;
-        }
 
-        else{
-            break;
-        }
-    
     }
+
+        /* //Determine the action type */
+        /* else if(!action_determined){ */
+        /*     if(*iter != '\n'){ */
+        /*         action_string.push_back(*iter); */     
+        /*     } */
+        /*     else{ */
+        /*         action_determined = true; */ 
+        /*         if(action_string == request_str){ */
+        /*             action = action_type::REQUEST; */ 
+        /*         } */
+        /*         else if(action_string == deny_str){ */
+        /*             action = action_type::DENY; */ 
+        /*         } */
+        /*         else if(action_string == data_str){ */
+        /*             action = action_type::DATA; */ 
+        /*         } */
+        /*     } */
+        /*     iter++; */
+        /* } */
+
+        /* else if(!filename_determined){ */
+        /*     if(*iter != '\n'){ */
+        /*         filename.push_back(*iter); */     
+        /*     } */
+        /*     else{ */
+        /*         filename_determined = true; */ 
+        /*     } */
+        /*     iter++; */
+        /* } */
+
+        /* else if(!length_determined){ */
+        /*     if(*iter != '\n'){ */
+        /*         length_string.push_back(*iter); */     
+        /*     } */
+        /*     else{ */
+        /*         length_determined = true; */
+        /*         length = stoi(length_string); */
+        /*     } */
+        /*     iter++; */
+        /* } */
+
+        /* else if(length > 0){ */
+        /*     data.reserve(length); */
+        /*     data.push_back(*iter); */        
+        /*     iter++; */
+        /*     length--; */
+        /* } */
+
+        /* else{ */
+        /*     break; */
+        /* } */
+    
+
 }
