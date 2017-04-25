@@ -3,7 +3,7 @@ using std::cout; using std::cerr; using std::endl;
 #include <fstream>
 using std::ofstream;
 #include <string>
-using std::string; using std::stoi;
+using std::string; using std::stoi; using std::stod;
 //INSERT POINT
 #include <stdexcept>
 
@@ -17,8 +17,8 @@ int main(int argc, char* argv[]){
 
     //The first step is checking for errors in the user's input.
     //Check that the number of args received is correct
-    if(argc != 4){
-        cerr << "Expected three args, Received " << argc -1 << endl;
+    if(argc != 6){
+        cerr << "Expected five args, Received " << argc -1 << endl;
         return 1;
     }
 
@@ -60,6 +60,27 @@ int main(int argc, char* argv[]){
     string filename(argv[3]);
     //End error handling
     
+    int window = 0;
+    try{
+        window = stoi(argv[4]); 
+    }
+    catch(std::invalid_argument e){
+        cerr << "The argument \"" << argv[4] 
+             << "\" could not be converted to a valid window size" << endl;
+        cerr << "Exiting with status code 1" << endl;
+        return 1;
+    }
+    catch(std::out_of_range e){
+        cerr << "The argument \"" << argv[4] 
+             << "\" was out of range." << endl;
+        cerr << "Exiting with status code 1" << endl;
+        return 1;
+    }
+
+    //TODO make this handle error cases
+    double prob_loss = 0;
+    prob_loss = stod(argv[5]); 
+    
     //Print a message to the user summarizing their intent
     cout << "You have requested that I use the following information." << endl;
     cout << "    Sender Hostname: " << sender_hostname << endl;
@@ -70,7 +91,7 @@ int main(int argc, char* argv[]){
     //Establish a connection with the server
     cout << "Attempting to establish a connection..." << endl;
     jstp_connector connector(sender_hostname, sender_portnum);
-    jstp_stream stream(connector, 0, 20000);      //TODO make this lose some packets
+    jstp_stream stream(connector, prob_loss, window);      //TODO make this lose some packets
     cout << "    ... connection established." << endl << endl;
 
     //Craft the request message
