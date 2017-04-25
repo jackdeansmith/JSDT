@@ -219,8 +219,8 @@ void jstp_stream::sender_main(){
                 cout_mutex.lock();
                 cout << "Sending this segment:" << endl;
                 cout << outgoing_seg.header_str() << endl;
-                cout << outgoing_seg.payload_str() << endl;
                 cout_mutex.unlock();
+                sleep(1);
             }
 
             //If there ever is no data to send, we break
@@ -252,6 +252,8 @@ void jstp_stream::receiver_main(){
         tv.tv_usec = TIMEOUT_USECS;
         bool got_something = stream_sock.recv(incoming_seg, true, tv);
 
+        //Establish the timeval for reliability
+
         //Now we need to do some stuff if we did indeed get something
         if(got_something){
 
@@ -277,7 +279,6 @@ void jstp_stream::receiver_main(){
                     cout_mutex.lock();
                     cout << "recvd and buffering this segment:" << endl;
                     cout << incoming_seg.header_str() << endl;
-                    cout << incoming_seg.payload_str() << endl;
                     cout_mutex.unlock();
 
                     //We need to update the sequence number we expect
