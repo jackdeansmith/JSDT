@@ -1,7 +1,7 @@
 //TODO boilerplate
 //The main file for the sender program
 #include <string>
-using std::string; using std::stoi;
+using std::string; using std::stoi; using std::stod;
 #include <iostream>
 using std::cout; using std::cerr; using std::endl;
 #include <fstream>
@@ -16,7 +16,7 @@ int main(int argc, char* argv[]){
 
     //The first step is checking for errors in the user's input.
     //Check that the number of args received is correct
-    if(argc != 2){
+    if(argc != 4){
         cerr << "Expected one arg, Received " << argc -1 << endl;
         return 1;
     }
@@ -54,6 +54,28 @@ int main(int argc, char* argv[]){
                 " with superuser privelages" << endl << endl;
     }
 
+    int window = 0;
+    try{
+        window = stoi(argv[2]); 
+    }
+    catch(std::invalid_argument e){
+        cerr << "The argument \"" << argv[2] 
+             << "\" could not be converted to a valid window size" << endl;
+        cerr << "Exiting with status code 1" << endl;
+        return 1;
+    }
+    catch(std::out_of_range e){
+        cerr << "The argument \"" << argv[2] 
+             << "\" was out of range." << endl;
+        cerr << "Exiting with status code 1" << endl;
+        return 1;
+    }
+
+    //TODO make this handle error cases
+    double prob_loss = 0;
+    prob_loss = stod(argv[3]); 
+
+
     //Print a message to the user summarizing user intent
     cout << "You have requested that I use the following information." << endl;
     cout << "Listening Port Number: " << portnum << endl;
@@ -62,7 +84,7 @@ int main(int argc, char* argv[]){
     //Create an acceptor object, use it to try and open a stream
     jstp_acceptor acceptor(portnum);
     cout << "Acceptor created!" << endl;
-    jstp_stream stream(acceptor, 0, 20000);    //TODO use real loss
+    jstp_stream stream(acceptor, prob_loss, window);    //TODO use real loss
     cout << "Stream Created!" << endl;
 
     //Next, we need to accept the segment the client is sending
