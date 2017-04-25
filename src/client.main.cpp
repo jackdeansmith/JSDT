@@ -70,7 +70,7 @@ int main(int argc, char* argv[]){
     //Establish a connection with the server
     cout << "Attempting to establish a connection..." << endl;
     jstp_connector connector(sender_hostname, sender_portnum);
-    jstp_stream stream(connector, 0);      //TODO make this lose some packets
+    jstp_stream stream(connector, 0, 20000);      //TODO make this lose some packets
     cout << "    ... connection established." << endl << endl;
 
     //Craft the request message

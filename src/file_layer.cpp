@@ -158,7 +158,7 @@ void incoming_message::recv(jstp_stream& stream){
     //Get the remaining characters into the data vector
     data.reserve(length);
     while(length > 0){
-        if(iter == recv_vect.end()){
+        while(iter == recv_vect.end()){
             cout << "In recv loop" << endl;
             timespec t;
             t.tv_sec = 0;

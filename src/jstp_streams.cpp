@@ -53,8 +53,10 @@ jstp_acceptor::jstp_acceptor(uint16_t portno):
 bool threads_running;
 
 //Constructor for the jstp_stream on the client side
-jstp_stream::jstp_stream(jstp_connector& connector, double probability_loss):
-    stream_sock(jstp_segment::MAX_SEGMENT_SIZE, probability_loss){
+jstp_stream::jstp_stream(jstp_connector& connector, double probability_loss, 
+                         size_t w):
+    stream_sock(jstp_segment::MAX_SEGMENT_SIZE, probability_loss), 
+    window_limit(w){
     
     //Bind the stream socket to any local port
     stream_sock.bind_local_any();
@@ -89,8 +91,10 @@ jstp_stream::jstp_stream(jstp_connector& connector, double probability_loss):
 }
 
 //Constructor for JSTP stream on the server side
-jstp_stream::jstp_stream(jstp_acceptor& acceptor, double probability_loss):
-    stream_sock(jstp_segment::MAX_SEGMENT_SIZE, probability_loss){
+jstp_stream::jstp_stream(jstp_acceptor& acceptor, double probability_loss,
+                         size_t w):
+    stream_sock(jstp_segment::MAX_SEGMENT_SIZE, probability_loss),
+    window_limit(w){
 
     //First, lets wait for a syn segment to come in
     jstp_segment syn_seg; 

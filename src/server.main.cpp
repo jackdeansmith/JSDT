@@ -62,7 +62,7 @@ int main(int argc, char* argv[]){
     //Create an acceptor object, use it to try and open a stream
     jstp_acceptor acceptor(portnum);
     cout << "Acceptor created!" << endl;
-    jstp_stream stream(acceptor, 0);    //TODO use real loss
+    jstp_stream stream(acceptor, 0, 20000);    //TODO use real loss
     cout << "Stream Created!" << endl;
 
     //Next, we need to accept the segment the client is sending

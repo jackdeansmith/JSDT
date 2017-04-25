@@ -54,8 +54,8 @@ class jstp_stream{
         static const size_t TIMEOUT_USECS = 500000;
         
         //Constructed from either an acceptor or a connector, no default.
-        jstp_stream(jstp_acceptor&, double loss_probability);
-        jstp_stream(jstp_connector&, double loss_probability);
+        jstp_stream(jstp_acceptor&, double loss_probability, size_t window);
+        jstp_stream(jstp_connector&, double loss_probability, size_t window);
 
         //Can't be coppied or moved
         jstp_stream(jstp_stream& other) = delete;
@@ -79,7 +79,7 @@ class jstp_stream{
         std::atomic<uint32_t> self_rwnd;
         std::atomic<uint32_t> other_rwnd;
         std::atomic<bool> force_send;
-        size_t window_limit = 2000;                //TODO add to constructor
+        size_t window_limit;                //TODO add to constructor
 
         //The send buffer and associated things
         std::mutex send_buffer_mutex;
