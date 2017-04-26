@@ -311,7 +311,9 @@ void jstp_stream::receiver_main(){
 
                     //If the diff was nonzero, that means we get to reset the
                     //timer for retransmits
-                    //TODO
+                    if(diff != 0){
+                        last_new_ack = std::chrono::steady_clock::now(); 
+                    }
                     send_buffer_mutex.unlock();
 
                 }
