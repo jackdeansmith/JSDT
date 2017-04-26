@@ -319,10 +319,16 @@ void jstp_stream::receiver_main(){
                 recv_buffer_mutex.unlock();
             }
 
-            //If the timer for retransmits has expired, then we need to wind
-            //back the sending window. This is as simple as setting the offset
-            //back to 0.
-            if(false){          //TODO condition
+            //Get the current time and see how many microseconds since the last
+            //fresh ack.
+            std::chrono::steady_clock::time_point now = 
+                                              std::chrono::steady_clock::now();
+            size_t diff = std::chrono::duration_cast<std::chrono::microseconds>
+                          (now - last_new_ack).count();
+
+            //If the difference is over the constant threshold...
+            if(diff > jstp_stream::TIMEOUT_USECS){          //TODO condition
+                //... then wind back the sender window.
                 send_buffer_mutex.lock(); 
                 offset = 0;
                 send_buffer_mutex.unlock(); 
