@@ -162,6 +162,12 @@ const sockaddr_in udp_socket::get_last_addr(){
     return last_recvd_addr;
 }
 
+
+//Allows the setting of the loss probability "mid-flight"
+void udp_socket::set_loss_probability(double prob){
+    loss_probability = prob;
+}
+
 //Send arbitrary data to our peer in a single segment
 void udp_socket::send(const vector<uint8_t>& v){
 

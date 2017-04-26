@@ -63,6 +63,9 @@ class udp_socket{
         const sockaddr_in get_peer_addr();
         const sockaddr_in get_last_addr();
 
+        //Allow the setting of the loss probability at any time
+        void set_loss_probability(double prob);
+
         //Primary interface, send and receive arbitrary serial data represented
         //as uint8_t vectors. Recv optionally allows a timeout to be set with a
         //proveded timeval. If the operation times out, it returns an empty
