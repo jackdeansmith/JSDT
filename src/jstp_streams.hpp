@@ -20,6 +20,7 @@
 #include <mutex>
 #include <atomic>
 #include <thread>
+#include <chrono>
 #include <condition_variable>
 
 //Cstd includes
@@ -93,7 +94,7 @@ class jstp_stream{
 
         //Timeval which indicates when the next timeout will happen
         std::mutex timeout_mutex;
-        timeval next_timeout;
+        std::chrono::steady_clock::time_point last_new_ack;
 
         //Sender thread support
         std::thread sender_thread;
