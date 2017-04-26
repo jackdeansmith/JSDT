@@ -111,7 +111,6 @@ void incoming_message::recv(jstp_stream& stream){
         //If we are at the end of our vector, wait around for half a second and
         //grab some more data, TODO make this event driven somehow?
         while(iter == recv_vect.end()){
-            cout << "In recv loop" << endl;
             timespec t;
             t.tv_sec = 0;
             t.tv_nsec = 500000000;
@@ -123,10 +122,8 @@ void incoming_message::recv(jstp_stream& stream){
         //Fill out the strings, using newlines as a separator
         char c = *iter; 
         if(string_index < 3){
-            cout << "Char report: " << c << endl;
             if(c == '\n'){
                 string_index++; 
-                cout << "String index: " << string_index << endl;
             }
 
             else{
@@ -151,15 +148,11 @@ void incoming_message::recv(jstp_stream& stream){
     filename = strings[1];
     length = stoi(strings[2]);
     string_index++;
-    cout << "Action string: " << strings[0] << endl;
-    cout << "Filename: " << strings[1] << endl;
-    cout << "Lenstr : " << strings[2] << endl;
 
     //Get the remaining characters into the data vector
     data.reserve(length);
     while(length > 0){
         while(iter == recv_vect.end()){
-            cout << "In recv loop" << endl;
             timespec t;
             t.tv_sec = 0;
             t.tv_nsec = 500000000;
