@@ -79,7 +79,7 @@ class jstp_stream{
         std::atomic<uint32_t> self_rwnd;
         std::atomic<uint32_t> other_rwnd;
         std::atomic<bool> force_send;
-        size_t window_limit;                //TODO add to constructor
+        size_t window_limit;
 
         //The send buffer and associated things
         std::mutex send_buffer_mutex;

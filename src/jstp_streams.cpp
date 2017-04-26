@@ -308,6 +308,10 @@ void jstp_stream::receiver_main(){
                     offset -= diff;
                     send_buffer.erase(send_buffer.begin(), 
                                       send_buffer.begin() + diff);
+
+                    //If the diff was nonzero, that means we get to reset the
+                    //timer for retransmits
+                    //TODO
                     send_buffer_mutex.unlock();
 
                 }
@@ -315,14 +319,23 @@ void jstp_stream::receiver_main(){
                 recv_buffer_mutex.unlock();
             }
 
-
-
-            //If the segment we got contained any data at all, we need to ack it
-            if(incoming_seg.get_length() > 0){
-                force_send.store(true); 
-                sender_condition_var.notify_one();
+            //If the timer for retransmits has expired, then we need to wind
+            //back the sending window. This is as simple as setting the offset
+            //back to 0.
+            if(false){          //TODO condition
+                send_buffer_mutex.lock(); 
+                offset = 0;
+                send_buffer_mutex.unlock(); 
             }
+
         }
+
+        //This code executes even if we didn't receive anything on this cycle
+
+        //Check to see if the ack has been updated
+            //If it has, then reset the timer
+        //Else check if the timer has expired
+            //If it has, then wind back the window and reset the timer
     }
 }
 
