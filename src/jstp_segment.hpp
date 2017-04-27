@@ -8,7 +8,6 @@
  *     A 32 bit window size
  *     A 32 bit length field (Length of the payload in bytes)
  *     A 16 bit flag field   (described below)
- *     A 16 bit port field   (usually unused)
  *     A variable ammount of payload data
  * All multibyte fields are manipulated in host byte ordering but when
  * serialized will be represented in a compatible format.
@@ -32,10 +31,10 @@ class jstp_segment: public serializable{
 
         //Constants which define the max segment size and the max payload size
         //for the segment. These values differ by exactly the size of the
-        //headers. Length of headers = 20 bytes.
+        //headers. Length of headers = 18.
         static const size_t MAX_SEGMENT_SIZE = 1024;
-        static const size_t HEADER_SIZE = 20;
-        static const size_t MAX_PAYLOAD_SIZE = 1004;
+        static const size_t HEADER_SIZE = 18;
+        static const size_t MAX_PAYLOAD_SIZE = 1006;
 
         //Explicitly only the default constructor, default move copy etc. should
         //all be just fine, we just use STL in this class.
@@ -46,7 +45,6 @@ class jstp_segment: public serializable{
         uint32_t get_ack();
         uint32_t get_window();
         uint32_t get_length();
-        uint16_t get_port();
         bool get_syn_flag();
         bool get_ack_flag();
         bool get_exit_flag();
@@ -56,7 +54,6 @@ class jstp_segment: public serializable{
         void set_ack(uint32_t);
         void set_window(uint32_t);
         //note: there is no setter for length, it is determined by the payload
-        void set_port(uint16_t);
         void set_syn_flag();
         void set_ack_flag();
         void set_exit_flag();
@@ -89,7 +86,6 @@ class jstp_segment: public serializable{
         uint32_t ack;
         uint32_t window;
         uint16_t flags;
-        uint16_t port;
 
         //Payload data
         std::vector<uint8_t> payload;

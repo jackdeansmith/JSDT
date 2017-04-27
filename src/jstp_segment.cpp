@@ -39,10 +39,6 @@ uint32_t jstp_segment::get_length(){
     return payload.size();
 }
 
-uint16_t jstp_segment::get_port(){
-    return port;
-}
-
 bool jstp_segment::get_syn_flag(){
     return (flags >> 15) & 1;
 }
@@ -66,10 +62,6 @@ void jstp_segment::set_ack(uint32_t in){
 
 void jstp_segment::set_window(uint32_t in){
     window = in;
-}
-
-void jstp_segment::set_port(uint16_t in){
-    port = in;
 }
 
 void jstp_segment::set_syn_flag(){
@@ -153,10 +145,6 @@ vector<uint8_t> jstp_segment::serialize(){
     memcpy(arr, &flags_net, 2);
     copy(arr, arr + 2, back_inserter(out));
 
-    uint16_t port_net = htons(port);
-    memcpy(arr, &port_net, 2);
-    copy(arr, arr + 2, back_inserter(out));
-
     //Lastly, copy the payload over into the serialized data and return it
     copy(payload.begin(), payload.end(), back_inserter(out));
     return out;
@@ -185,12 +173,8 @@ void jstp_segment::deserialize(const vector<uint8_t>& v){
     memcpy(&flags_net, ptr, 2); ptr += 2;
     flags = ntohs(flags_net);
 
-    uint16_t port_net;
-    memcpy(&port_net, ptr, 2); ptr += 2;
-    port = ntohs(port_net);
-
     payload.clear();
-    copy(v.begin() + 20, v.begin() + 20 + length, back_inserter(payload));
+    copy(v.begin() + 18, v.begin() + 18 + length, back_inserter(payload));
 }
 
 //Get a string summarizing the headers
@@ -213,7 +197,6 @@ string jstp_segment::header_str(){
         oss << "EXIT"; 
    }
    oss << endl;
-   oss << "    Port            = " << get_port() << endl;
    return oss.str();
 }
 
