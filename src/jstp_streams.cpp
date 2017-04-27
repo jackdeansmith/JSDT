@@ -326,30 +326,32 @@ void jstp_stream::receiver_main(){
                 recv_buffer_mutex.unlock();
             }
 
-            //Get the current time and see how many microseconds since the last
-            //fresh ack.
-            std::chrono::steady_clock::time_point now = 
-                                              std::chrono::steady_clock::now();
-            size_t diff = std::chrono::duration_cast<std::chrono::microseconds>
-                          (now - last_new_ack).count();
-
-            cout << "The diff was: " << diff << " usecs" << endl;
-
-            //If the difference is over the constant threshold...
-            if(diff > jstp_stream::TIMEOUT_USECS){          //TODO condition
-                //... then wind back the sender window.
-                send_buffer_mutex.lock(); 
-                offset = 0;
-                send_buffer_mutex.unlock(); 
-
-                //Then, wake the sender thread
-                force_send.store(true);
-                sender_condition_var.notify_one();
-                
-                cout << "Detected new timeout" << endl;
-            }
 
         }
+
+        //Get the current time and see how many microseconds since the last
+        //fresh ack.
+        std::chrono::steady_clock::time_point now = 
+                                          std::chrono::steady_clock::now();
+        size_t diff = std::chrono::duration_cast<std::chrono::microseconds>
+                      (now - last_new_ack).count();
+
+        cout << "The diff was: " << diff << " usecs" << endl;
+
+        //If the difference is over the constant threshold...
+        if(diff > jstp_stream::TIMEOUT_USECS){          //TODO condition
+            //... then wind back the sender window.
+            send_buffer_mutex.lock(); 
+            offset = 0;
+            send_buffer_mutex.unlock(); 
+
+            //Then, wake the sender thread
+            force_send.store(true);
+            sender_condition_var.notify_one();
+            
+            cout << "Detected new timeout" << endl;
+        }
+
     }
 }
 
