@@ -55,7 +55,7 @@ bool threads_running;
 //Constructor for the jstp_stream on the client side
 jstp_stream::jstp_stream(jstp_connector& connector, double probability_loss, 
                          size_t w):
-    stream_sock(jstp_segment::MAX_SEGMENT_SIZE, probability_loss), 
+    stream_sock(jstp_segment::MAX_SEGMENT_SIZE, 0), 
     window_limit(w){
     
     //Bind the stream socket to any local port
@@ -86,6 +86,7 @@ jstp_stream::jstp_stream(jstp_connector& connector, double probability_loss,
     //The synack should contain the servers initial sequence number
     uint32_t server_isn = synack_seg.get_sequence();
 
+    stream_sock.set_loss_probability(probability_loss);
     //TODO use the real numbers we got
     init(our_isn + 1, server_isn + 1);
 }
@@ -93,7 +94,7 @@ jstp_stream::jstp_stream(jstp_connector& connector, double probability_loss,
 //Constructor for JSTP stream on the server side
 jstp_stream::jstp_stream(jstp_acceptor& acceptor, double probability_loss,
                          size_t w):
-    stream_sock(jstp_segment::MAX_SEGMENT_SIZE, probability_loss),
+    stream_sock(jstp_segment::MAX_SEGMENT_SIZE, 0),
     window_limit(w){
 
     //First, lets wait for a syn segment to come in
@@ -121,6 +122,8 @@ jstp_stream::jstp_stream(jstp_acceptor& acceptor, double probability_loss,
 
     //Send the synack back
     stream_sock.send(synack_seg);
+
+    stream_sock.set_loss_probability(probability_loss);
 
     //TODO wait for normal ack back
     init(our_isn + 1, other_isn + 1);       //TODO make this real
@@ -312,6 +315,8 @@ void jstp_stream::receiver_main(){
                     //If the diff was nonzero, that means we get to reset the
                     //timer for retransmits
                     if(diff != 0){
+                        cout << "Updated, got a new ack" << endl;
+                        force_send.store(true);
                         last_new_ack = std::chrono::steady_clock::now(); 
                     }
                     send_buffer_mutex.unlock();
@@ -328,22 +333,23 @@ void jstp_stream::receiver_main(){
             size_t diff = std::chrono::duration_cast<std::chrono::microseconds>
                           (now - last_new_ack).count();
 
+            cout << "The diff was: " << diff << " usecs" << endl;
+
             //If the difference is over the constant threshold...
             if(diff > jstp_stream::TIMEOUT_USECS){          //TODO condition
                 //... then wind back the sender window.
                 send_buffer_mutex.lock(); 
                 offset = 0;
                 send_buffer_mutex.unlock(); 
+
+                //Then, wake the sender thread
+                force_send.store(true);
+                sender_condition_var.notify_one();
+                
+                cout << "Detected new timeout" << endl;
             }
 
         }
-
-        //This code executes even if we didn't receive anything on this cycle
-
-        //Check to see if the ack has been updated
-            //If it has, then reset the timer
-        //Else check if the timer has expired
-            //If it has, then wind back the window and reset the timer
     }
 }
 
