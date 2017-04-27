@@ -174,7 +174,6 @@ void jstp_stream::sender_main(){
         //The first thing we do is wait for someone to notify us that we have a
         //job to do.
         unique_lock<mutex> l(sender_notify_lock);
-        sender_condition_var.wait_for(l, std::chrono::seconds(1));
 
         //Infinite loop, exited once all data that can be sent immediatly has
         //been sent
@@ -219,6 +218,11 @@ void jstp_stream::sender_main(){
 
                 //Advance the offset by the specified ammount
                 offset += payload_size;
+                
+                //If the length of the segment was nonzero...
+                if(payload_size != 0){
+                    data_on_wire.store(true); 
+                }
 
                 //Turn off the force send flag
                 force_send.store(false);
@@ -227,7 +231,6 @@ void jstp_stream::sender_main(){
                 cout << "Sending this segment:" << endl;
                 cout << outgoing_seg.header_str() << endl;
                 cout_mutex.unlock();
-                sleep(1);
             }
 
             //If there ever is no data to send, we break
@@ -259,18 +262,35 @@ void jstp_stream::receiver_main(){
         tv.tv_usec = TIMEOUT_USECS;
         bool got_something = stream_sock.recv(incoming_seg, true, tv);
 
-        //Establish the timeval for reliability
-
         //Now we need to do some stuff if we did indeed get something
         if(got_something){
 
-            //First check to see if the segment was a close flag, if it is, we
-            //need to respond even if it's out of order.
-            if(incoming_seg.get_exit_flag()){
-                //TODO handle this case 
-                cout << "Receiver got a segment with a close flag." << endl;
-                connected = false;
-                closing = false;
+            //Even if it wasn't the segment we were expecting, we should still
+            //do some stuff with it.
+            //Like use it's rwnd value
+            other_rwnd.store(incoming_seg.get_window());
+
+            //See how many new bytes our peer has acknoledged,
+            //erase these bytes from the beginning of the sender queue because
+            //we know they were delivered correctly. Adjust the offset as
+            //needed.
+            send_buffer_mutex.lock();
+            size_t new_acked_bytes = incoming_seg.get_ack() 
+                                     - sender_base_sequence;
+            sender_base_sequence += new_acked_bytes;
+            offset -= new_acked_bytes;
+            send_buffer.erase(send_buffer.begin(), 
+                              send_buffer.begin() + new_acked_bytes);
+            if(offset == 0){
+                data_on_wire.store(false); 
+            }
+            send_buffer_mutex.unlock();
+
+            //If the number of new acked bytes was nonzero...
+            if(new_acked_bytes != 0){
+                //... that means we got a new ack. Our timeout timepoint should
+                //be adjusted.
+                last_new_ack = std::chrono::steady_clock::now(); 
             }
 
             //If it was the segment we expected
@@ -293,8 +313,6 @@ void jstp_stream::receiver_main(){
                                             incoming_seg.get_length();
                     self_ack_number.store(new_expected);
 
-                    //We need to update the rwnd size we are tracking
-                    other_rwnd.store(incoming_seg.get_window());
 
                     //We need to reduce the size of our rwnd
                     self_rwnd -= incoming_seg.get_length();
@@ -303,55 +321,33 @@ void jstp_stream::receiver_main(){
                     copy(incoming_seg.payload_begin(), incoming_seg.payload_end()
                             ,back_inserter(recv_buffer));
 
-                    //We also need to update the send buffer to get rid of the
-                    //old data
-                    send_buffer_mutex.lock();
-                    size_t diff = incoming_seg.get_ack() - sender_base_sequence;
-                    sender_base_sequence += diff;
-                    offset -= diff;
-                    send_buffer.erase(send_buffer.begin(), 
-                                      send_buffer.begin() + diff);
-
-                    //If the diff was nonzero, that means we get to reset the
-                    //timer for retransmits
-                    if(diff != 0){
-                        cout << "Updated, got a new ack" << endl;
-                        force_send.store(true);
-                        last_new_ack = std::chrono::steady_clock::now(); 
-                    }
-                    send_buffer_mutex.unlock();
 
                 }
-
                 recv_buffer_mutex.unlock();
             }
-
-
         }
 
-        //Get the current time and see how many microseconds since the last
-        //fresh ack.
+        //Figure out what time it is now and how long it has been since the last
+        //timeout.
         std::chrono::steady_clock::time_point now = 
                                           std::chrono::steady_clock::now();
         size_t diff = std::chrono::duration_cast<std::chrono::microseconds>
                       (now - last_new_ack).count();
 
-        cout << "The diff was: " << diff << " usecs" << endl;
-
-        //If the difference is over the constant threshold...
-        if(diff > jstp_stream::TIMEOUT_USECS){          //TODO condition
+        //If the difference is over the constant threshold and there is some
+        //ammount of data on the wire which is unacked...
+        if(diff > jstp_stream::TIMEOUT_USECS && data_on_wire.load()){
             //... then wind back the sender window.
             send_buffer_mutex.lock(); 
             offset = 0;
+            data_on_wire.store(false);
             send_buffer_mutex.unlock(); 
-
-            //Then, wake the sender thread
-            force_send.store(true);
-            sender_condition_var.notify_one();
-            
-            cout << "Detected new timeout" << endl;
         }
 
+        //Finally, the last thing we do is wake the sender thread. This
+        //guarentees that it gets woken up at least once per timeout interval
+        //and at least once per packet recvd.
+        sender_condition_var.notify_one();
     }
 }
 
