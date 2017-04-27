@@ -73,8 +73,12 @@ class jstp_stream{
         udp_socket stream_sock;
 
         //Data which must be available to everyone
-        std::atomic<bool> connected;
+        //When set to false, immediatly terminates the threads
+        std::atomic<bool> running; 
+        //When set to true, starts sending exit segments when the send buf is
+        //empty. If a process is closing and recvs an exit, running is false.
         std::atomic<bool> closing;
+
         std::atomic<uint32_t> self_ack_number;
         std::atomic<uint32_t> self_sequence_number;
         std::atomic<uint32_t> self_rwnd;

@@ -142,8 +142,8 @@ void jstp_stream::init(uint32_t init_seq, uint32_t init_ack){
     other_rwnd = BUFF_CAPACITY;
     
     //Start the threads, make sure this is the last thing init does
-    connected = true;
-    closing = false;
+    running.store(true);
+    closing.store(false);
     sender_thread = thread(&jstp_stream::sender_main, this);
     receiver_thread = thread(&jstp_stream::receiver_main, this);
 }
@@ -153,6 +153,7 @@ jstp_stream::~jstp_stream(){
     //The receiver has it's own timeout loop, but the sender will need to be
     //notified. This will cause it to execute another loop of it's programming
     //and then return.
+    closing.store(true);
     sender_condition_var.notify_one();
 
     //Now we need to join both threads
@@ -163,7 +164,7 @@ jstp_stream::~jstp_stream(){
 //Sender thread main function
 void jstp_stream::sender_main(){
     //Sender only runs while the threads are running, obviously
-    while(connected || closing){
+    while(running){
 
         //The first thing we do is wait for someone to notify us that we have a
         //job to do.
@@ -173,11 +174,9 @@ void jstp_stream::sender_main(){
         //Infinite loop, exited once all data that can be sent immediatly has
         //been sent
         for(;;){
-            cout << "MADE IT" << endl;
             //Now we need to figure out if we have any data to send, to do this we
             //need exclusive acess to the send buffer.
             send_buffer_mutex.lock();
-            cout << "MADE IT" << endl;
 
             //Figure out how much buffered data we have
             size_t buffered_data = send_buffer.size() - offset;
@@ -193,9 +192,6 @@ void jstp_stream::sender_main(){
 
             //We only send if we have a payload or we are bing forced to send
             if(payload_size > 0 || force_send.load()){
-                cout << "Decided to send because payload size was estimated at:"
-                     << payload_size << ". force send was: " << force_send.load()
-                     << endl;
                 jstp_segment outgoing_seg;
 
                 //Set all the headers appropriatly
@@ -230,6 +226,10 @@ void jstp_stream::sender_main(){
                     data_on_wire.store(true); 
                 }
 
+                if(send_buffer.size() == 0 && closing){
+                    outgoing_seg.set_exit_flag();     
+                }
+
                 //Turn off the force send flag
                 force_send.store(false);
 
@@ -238,6 +238,7 @@ void jstp_stream::sender_main(){
                 cout << outgoing_seg.header_str() << endl;
                 cout_mutex.unlock();
             }
+
 
             //If there ever is no data to send, we break
             else{
@@ -255,7 +256,7 @@ void jstp_stream::sender_main(){
 //Receiver thread main function
 void jstp_stream::receiver_main(){
     //Receiver only runs while the threads are running, duh
-    while(connected){
+    while(running){
         cout << "At the top of the recv loop" << endl;
 
         //First thing we do is try to get a segment out of the socket, we only
@@ -270,6 +271,19 @@ void jstp_stream::receiver_main(){
         //Now we need to do some stuff if we did indeed get something
         if(got_something){
             cout << "Got something!!!" << endl;
+
+            //If we get an exit seg...
+            if(incoming_seg.get_exit_flag()){
+
+                //Then we imediatly quit if we were in the closing state or move
+                //to the closing state if we werent
+                if(closing.load()){
+                    running.store(false); 
+                }
+                else{
+                    closing.store(true); 
+                }
+            }
 
             //Even if it wasn't the segment we were expecting, we should still
             //do some stuff with it.
