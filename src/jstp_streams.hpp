@@ -72,15 +72,17 @@ class jstp_stream{
         //The socket which we will use to communicate with our peer
         udp_socket stream_sock;
 
-        //Data which must be available to everyone
-        //When set to false, immediatly terminates the threads
+        //Used to manage the activities of the two threads
         std::atomic<bool> running; 
-        //When set to true, starts sending exit segments when the send buf is
-        //empty. If a process is closing and recvs an exit, running is false.
         std::atomic<bool> closing;
+        std::atomic<bool> terminating;
 
+        //Used in the termination process
+        std::atomic<uint32_t> self_exit_number;
+        std::atomic<uint32_t> peer_exit_number;
+
+        //Used during data transfer
         std::atomic<uint32_t> self_ack_number;
-        std::atomic<uint32_t> self_sequence_number;
         std::atomic<uint32_t> self_rwnd;
         std::atomic<uint32_t> other_rwnd;
         std::atomic<bool> force_send;
@@ -92,13 +94,16 @@ class jstp_stream{
         std::deque<uint8_t> send_buffer;
         uint32_t sender_base_sequence;
         size_t offset;
+        
+        //Used to determine if the send buffer has been fully flushed
+        std::mutex flush_lock;
+        std::condition_variable flushed;
 
         //The receiver buffer and assiciated things
         std::mutex recv_buffer_mutex;
         std::deque<uint8_t> recv_buffer;
 
         //Timeval which indicates when the next timeout will happen
-        std::mutex timeout_mutex;
         std::chrono::steady_clock::time_point last_new_ack;
 
         //Sender thread support
