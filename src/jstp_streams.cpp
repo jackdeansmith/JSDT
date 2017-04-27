@@ -150,12 +150,6 @@ void jstp_stream::init(uint32_t init_seq, uint32_t init_ack){
 
 //Destructor
 jstp_stream::~jstp_stream(){
-    //First set the thread running variable to false
-    send_buffer_mutex.lock();
-    connected = false;
-    closing = true;
-    send_buffer_mutex.unlock();
-
     //The receiver has it's own timeout loop, but the sender will need to be
     //notified. This will cause it to execute another loop of it's programming
     //and then return.
@@ -174,20 +168,24 @@ void jstp_stream::sender_main(){
         //The first thing we do is wait for someone to notify us that we have a
         //job to do.
         unique_lock<mutex> l(sender_notify_lock);
+        sender_condition_var.wait(l);
 
         //Infinite loop, exited once all data that can be sent immediatly has
         //been sent
         for(;;){
+            cout << "MADE IT" << endl;
             //Now we need to figure out if we have any data to send, to do this we
             //need exclusive acess to the send buffer.
             send_buffer_mutex.lock();
+            cout << "MADE IT" << endl;
 
             //Figure out how much buffered data we have
             size_t buffered_data = send_buffer.size() - offset;
 
             //Figure out how much we are allowed to put on the wire
             size_t flow_limit = other_rwnd.load() - offset;
-            flow_limit = min(flow_limit, window_limit);
+            size_t wndlim = window_limit - offset; 
+            flow_limit = min(flow_limit, wndlim);
 
             //Figure out how big the payload would be
             size_t payload_size = min(flow_limit, buffered_data);
@@ -195,10 +193,18 @@ void jstp_stream::sender_main(){
 
             //We only send if we have a payload or we are bing forced to send
             if(payload_size > 0 || force_send.load()){
+                cout << "Decided to send because payload size was estimated at:"
+                     << payload_size << ". force send was: " << force_send.load()
+                     << endl;
                 jstp_segment outgoing_seg;
 
                 //Set all the headers appropriatly
-                outgoing_seg.set_sequence(sender_base_sequence + offset);
+                if(payload_size > 0){
+                    outgoing_seg.set_sequence(sender_base_sequence + offset);
+                }
+                else{
+                    outgoing_seg.set_sequence(0);
+                }
                 outgoing_seg.set_ack(self_ack_number.load());
                 outgoing_seg.set_ack_flag();
                 outgoing_seg.set_window(self_rwnd.load());
@@ -239,19 +245,18 @@ void jstp_stream::sender_main(){
                 break; 
             }
 
-            if(closing && send_buffer.size() == 0){
-                return; 
-            }
-
             send_buffer_mutex.unlock();
         }
     }
+
+    cout << "Sender quit" << endl;
 }
 
 //Receiver thread main function
 void jstp_stream::receiver_main(){
     //Receiver only runs while the threads are running, duh
     while(connected){
+        cout << "At the top of the recv loop" << endl;
 
         //First thing we do is try to get a segment out of the socket, we only
         //wait at most one timout interval because we probably have other things
@@ -264,6 +269,7 @@ void jstp_stream::receiver_main(){
 
         //Now we need to do some stuff if we did indeed get something
         if(got_something){
+            cout << "Got something!!!" << endl;
 
             //Even if it wasn't the segment we were expecting, we should still
             //do some stuff with it.
@@ -274,7 +280,9 @@ void jstp_stream::receiver_main(){
             //erase these bytes from the beginning of the sender queue because
             //we know they were delivered correctly. Adjust the offset as
             //needed.
+            cout << "Im the recvr, trying to acquire the sender mutex" << endl;
             send_buffer_mutex.lock();
+            cout << "Im the recvr, i got the sender mutex" << endl;
             size_t new_acked_bytes = incoming_seg.get_ack() 
                                      - sender_base_sequence;
             sender_base_sequence += new_acked_bytes;
@@ -290,6 +298,7 @@ void jstp_stream::receiver_main(){
             if(new_acked_bytes != 0){
                 //... that means we got a new ack. Our timeout timepoint should
                 //be adjusted.
+                cout << "Erased some old data and updated" << endl;
                 last_new_ack = std::chrono::steady_clock::now(); 
             }
 
@@ -303,10 +312,6 @@ void jstp_stream::receiver_main(){
                 //If there is space...
                 size_t available_space = BUFF_CAPACITY - recv_buffer.size();
                 if(available_space > incoming_seg.get_length()){
-                    cout_mutex.lock();
-                    cout << "recvd and buffering this segment:" << endl;
-                    cout << incoming_seg.header_str() << endl;
-                    cout_mutex.unlock();
 
                     //We need to update the sequence number we expect
                     uint32_t new_expected = self_ack_number.load() + 
@@ -321,6 +326,7 @@ void jstp_stream::receiver_main(){
                     copy(incoming_seg.payload_begin(), incoming_seg.payload_end()
                             ,back_inserter(recv_buffer));
 
+                    force_send.store(true);
 
                 }
                 recv_buffer_mutex.unlock();
@@ -336,17 +342,22 @@ void jstp_stream::receiver_main(){
 
         //If the difference is over the constant threshold and there is some
         //ammount of data on the wire which is unacked...
+        cout << "The diff is: " << diff << ". Data on wire is: " 
+             << data_on_wire.load() << endl;
         if(diff > jstp_stream::TIMEOUT_USECS && data_on_wire.load()){
             //... then wind back the sender window.
             send_buffer_mutex.lock(); 
             offset = 0;
             data_on_wire.store(false);
             send_buffer_mutex.unlock(); 
+            force_send.store(true);
+            cout << "Timeout event" << endl;
         }
 
         //Finally, the last thing we do is wake the sender thread. This
         //guarentees that it gets woken up at least once per timeout interval
         //and at least once per packet recvd.
+        force_send.store(true);
         sender_condition_var.notify_one();
     }
 }
