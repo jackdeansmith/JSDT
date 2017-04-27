@@ -389,6 +389,7 @@ void jstp_stream::receiver_main(){
             data_on_wire.store(false);
             send_buffer_mutex.unlock(); 
             force_send.store(true);
+            cout << "Timeout event" << endl;
         }
 
         //Finally, the last thing we do is wake the sender thread. This
