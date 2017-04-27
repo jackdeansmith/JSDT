@@ -48,10 +48,6 @@ jstp_acceptor::jstp_acceptor(uint16_t portno):
     acceptor_socket.bind_local(portno);
 }
 
-//The JSTP stream is obviously a multithreaded component, these globals are
-//needed in order to manage the state of these threads.
-bool threads_running;
-
 //Constructor for the jstp_stream on the client side
 jstp_stream::jstp_stream(jstp_connector& connector, double probability_loss, 
                          size_t w):
