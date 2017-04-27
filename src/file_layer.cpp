@@ -12,6 +12,11 @@ using std::ostream_iterator;
 using std::ostringstream;
 #include <time.h>
 
+//The strings which specify the action type
+static const string request_str = "REQUEST";
+static const string deny_str = "DENY";
+static const string data_str = "DATA";
+
 //Get a string representation of the message, this might be used later for the
 //send function if I'm feeling particularly lazy.
 string file_message::str(){
