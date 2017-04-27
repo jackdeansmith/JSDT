@@ -288,7 +288,7 @@ void jstp_stream::receiver_main(){
         //to do at that point even if we don't get a segment.
         jstp_segment incoming_seg;
         timeval tv;
-        tv.tv_sec = TIMEOUT_SECONDS;
+        tv.tv_sec = 0;
         tv.tv_usec = TIMEOUT_USECS;
         bool got_segment = stream_sock.recv(incoming_seg, true, tv);
 

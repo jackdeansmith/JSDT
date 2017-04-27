@@ -51,7 +51,6 @@ class jstp_stream{
     public:
         //Settings
         static const size_t BUFF_CAPACITY = 64000000;  //64kB TODO tune this
-        static const size_t TIMEOUT_SECONDS = 0;
         static const size_t TIMEOUT_USECS = 500000;
         
         //Constructed from either an acceptor or a connector, no default.
