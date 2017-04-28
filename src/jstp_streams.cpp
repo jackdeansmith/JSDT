@@ -135,7 +135,17 @@ void jstp_stream::init(uint32_t init_seq, uint32_t init_ack){
 
     self_rwnd = BUFF_CAPACITY;
     other_rwnd = BUFF_CAPACITY;
-    
+
+    self_exit_number.store(0);
+    peer_exit_number.store(0);
+
+    //Used during data transfer
+    force_send.store(false);
+    data_on_wire.store(false);
+
+    //The send buffer and associated things
+    offset = 0;
+        
     //Start the threads, make sure this is the last thing init does
     running.store(true);
     closing.store(false);

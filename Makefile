@@ -2,7 +2,7 @@
 #TODO boilerplate
 
 #The compiler
-CXX = g++ -pthread -std=c++0x -Wall
+CXX = g++ -g -pthread -std=c++0x -Wall
 
 #Objects needed to build the sender and receiver
 server_objects = ./build/server.o ./build/file_layer.o ./build/udp_socket.o \
