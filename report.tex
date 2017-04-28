@@ -1,31 +1,130 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage{graphicx}
+\graphicspath{ {images/} }
 
 \title{JSTP: Jack-Steven Transfer Protocol}
-\author{Jack Smith \& Steven Kneiser}
+\author{Jack Smith (smit2395) \& Steven Kneiser (kneisers)}
 \date{April 27, 2017}
+
+\makeatletter
+% we use \prefix@<level> only if it is defined
+\renewcommand{\@seccntformat}[1]{%
+  \ifcsname prefix@#1\endcsname
+    \csname prefix@#1\endcsname
+  \else
+    \csname the#1\endcsname\quad
+  \fi}
+% define \prefix@section
+\newcommand\prefix@section{Section \thesection: }
+\makeatother
 
 \begin{document}
 \maketitle
 
-\section{Abstract}
-Our protocol is awesome.
-
-\section{Introduction}
-
 \section{Getting Started}
-Setup instructions here.
+Navigate to the root of the project directory. Here you are going to build the client \& server executables:
+\begin{lstlisting}[language=bash]
+  $ make
+\end{lstlisting}
 
-\section{Methods}
+\vspace{4mm}
+Next you can either append the project \textbf{bin/} to your \textbf{PATH} or you can simply move inside it for simplicity.
+There you can run the two executables with the following commands, where \emph{P} is the probability of packet loss \& \emph{Cwnd} is the window size as measured in bytes:
+\begin{lstlisting}[language=bash]
+  $ cd ./bin
+  $ ./server port_number Cwnd P
+  $ ./client server_hostname port_number filename P
+\end{lstlisting}
 
-\section{Results}
+\section{Design}
+\includegraphics[width=12cm, height=6cm]{overview}
 
-\section{Discussion}
-- Our findings.
-- What went right/wrong.
-- In conclusion, relevance \& implications for theory
+\subsection{Protocol Overview}
+\begin{itemize}
+    \item All data packets are also ACK packets
+    \item The client \& server are fully symmetric once connected (full duplex)
+    \item Can communicate with multiple clients since ports are uniquely re-assigned to each connection during initial handshake
+\end{itemize}
 
-\section{Acknowledgements}
-People who contributed but did not meet criteria for authorship.
+\subsection{JSTP\_Stream object}
+\includegraphics[width=10cm, height=6cm]{stream}
 
+Streams are constructed both from an acceptor on the server side and a connector on the client side.
+Over the course of the handshake, the server and client will discern an ephemeral port to exchange all future data over which frees up both of them to construct other streams.
+
+\vspace{4mm}
+\noindent\textbf{User Interface:}
+\begin{itemize}
+    \item Constructed from \underline{Connector} or \underline{Acceptor}
+    \item \emph{Send()} adds data to the send buffer
+    \item \emph{Recv()} grabs data from the receive buffer
+\end{itemize}
+
+\vspace{4mm}
+\noindent\textbf{Run-time:}
+\begin{itemize}
+    \item Sender is \underline{by default} sleeping
+    \item When awaken, it sends as much data as it can, then returns to sleep
+    \item (e.g., the receiver thread wakes the sender when new data is received)
+\end{itemize}
+
+\subsection{JSTP\_Segment object}
+A Segment is a digestible \~1 KB slice of a file that will sent over the network.
+They inherit serialize-able traits from an abstract base class for ease in sending over UDP sockets.
+Also, they come with the structured header:
+
+\begin{itemize}
+    \item 32 bits: Sequence number
+    \item 32 bits: ACK number
+    \item 32 bits: Window size
+    \item 16 bits: Flags
+\end{itemize}
+
+\vspace{4mm}
+\noindent\textbf{Other notable features:}
+\begin{itemize}
+    \item Sequences \& ACKs are \underline{byte-oriented} (like in TCP)
+    \item This means a reasonable window size is large (1 KB or more)
+    \item ACK number is the sequence number of the next expected byte
+    \item Sequence number is the number of the first byte in the segment
+    \item Out of order segments are discarded (waking the sender thread, thus forcing a duplicate ACK along with Go-Back-N behaviour)
+\end{itemize}
+
+\subsection{UDP Socket Abstraction}
+This abstraction is worth mentioning for its simplification of both our loss simulation \& interaction with the greater transport-layer functionality critical to the JSTP.
+Our UDP Socket abstraction helps to:
+\begin{itemize}
+    \item Bind to local ports with \emph{bind\_local()} and \emph{bind\_local\_only()}
+    \item Send and receive any serialize-able object up to a configurable size limit (in this case, JSTP\_Segment)
+    \item Simulate loss on both ends along a Bernoulli distribution
+    \item Save address of last peer (useful for handshake)
+\end{itemize}
+
+\break
+\section{Challenges}
+\subsection{Big Design Up Front}
+Over the weeks, the JSTP design evolved as we fleshed out our implementation.
+At first, we cautiously crafted the JSTP\_Segment so we could carefully partition entire files, and decided how best to encode/decode them.
+This week of implementing was as smooth as usual development on our familiar environments only with the daunting reality that we had not
+yet thought our solution entirely through.
+
+\subsection{C++0x}
+We began using git for version control to coordinate and, after grinding to a halt, had to painstakingly port our initial solution to the target environment which was proved surprisingly difficult despite it being the same one since Project 1.
+In reality, this project demanded much more intricate structures so we began this one, without hesitation, programming in the more batteries-included C++.
+However, some of the most convenient C++11 features we habitually took advantage of were nowhere to be found.
+Turns out this particular environment's compiler had come out not long before that standard and offered most of the features we were using, only under the yet-to-be-announced C++11 standard, \emph{C++0x}.
+With that out of the way, all of our unsupported language-specific features required workarounds which dealt quite an irritating setback to the team.
+
+\subsection{Socket Programming}
+After polishing off the application-layer component to our protocol, we got to work constructing the underbelly, that is the more generalized transport-layer component to the JSTP.
+The next two weeks were predominately spent studying other implementations of data transfer at this layer.
+Only once we came across the Acceptor-Connector design pattern in networking could we finally had the knowledge brainstorm the rest of our architecture.
+
+\subsection{Playing Nice with Multiple Threads}
+While we had worked with primitive socket I/O in C for Project 1, our ambitious transport-layer component was fully symmetrical and required much more tedious use of \emph{socketpairs}.
+This comes with not shortage along of headaches associated with isolating operations between threads and synchronizing this fluid two-way communication over the network.  This was the week our demo began to take form.
+
+With another productive week of research and working alongside the compiler, we overcome most of our complications. Ultimately, this packaged implementation of JSTP not only operates precisely as envisioned, but also transfers data with the performance to show for our close attention to detail.
 \end{document}
