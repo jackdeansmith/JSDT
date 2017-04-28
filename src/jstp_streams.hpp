@@ -103,7 +103,7 @@ class jstp_stream{
         std::deque<uint8_t> recv_buffer;
 
         //Timeval which indicates when the next timeout will happen
-        std::chrono::steady_clock::time_point last_new_ack;
+        std::chrono::monotonic_clock::time_point last_new_ack;
 
         //Sender thread support
         std::thread sender_thread;

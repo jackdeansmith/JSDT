@@ -335,7 +335,7 @@ void jstp_stream::receiver_main(){
                 if(new_acked_bytes != 0){
                     //... that means we got a new ack. Our timeout timepoint should
                     //be adjusted.
-                    last_new_ack = std::chrono::steady_clock::now(); 
+                    last_new_ack = std::chrono::monotonic_clock::now(); 
                 }
 
                 //If it was the segment we expected
@@ -375,8 +375,8 @@ void jstp_stream::receiver_main(){
 
         //Figure out what time it is now and how long it has been since the last
         //timeout.
-        std::chrono::steady_clock::time_point now = 
-                                          std::chrono::steady_clock::now();
+        std::chrono::monotonic_clock::time_point now = 
+                                          std::chrono::monotonic_clock::now();
         size_t diff = std::chrono::duration_cast<std::chrono::microseconds>
                       (now - last_new_ack).count();
 
